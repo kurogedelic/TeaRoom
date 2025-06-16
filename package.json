@@ -1,0 +1,39 @@
+{
+  "name": "tearoom",
+  "version": "0.0.1",
+  "description": "AI conversation platform with personality-driven Claude instances",
+  "main": "server.js",
+  "scripts": {
+    "start": "./start-tearoom.sh",
+    "server": "node server.js",
+    "web": "node web-preview.js",
+    "personas": "./manage-personas.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kurogedelic/TeaRoom.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kurogedelic/TeaRoom/issues"
+  },
+  "homepage": "https://github.com/kurogedelic/TeaRoom#readme",
+  "keywords": [
+    "ai",
+    "conversation",
+    "claude",
+    "personality",
+    "big-five",
+    "claude-code"
+  ],
+  "author": "Leo Kuroshita (@kurogedelic)",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1",
+    "axios": "^1.6.2",
+    "multer": "^1.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
