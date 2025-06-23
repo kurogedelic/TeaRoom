@@ -1,4 +1,6 @@
 const { execSync } = require('child_process');
+const conversationDynamics = require('./conversation-dynamics');
+const intelligentResponses = require('./intelligent-responses');
 
 class ClaudeSDKService {
   constructor() {
@@ -7,6 +9,8 @@ class ClaudeSDKService {
     this.roomTimers = new Map(); // roomId -> timeout for auto-conversation
     this.activeResponses = new Map(); // roomId -> Set of persona IDs currently responding
     this.autoConversationEnabled = true;
+    this.conversationAnalytics = new Map(); // roomId -> analytics data
+    this.responseStrategies = new Map(); // roomId -> current strategy
   }
 
   /**
@@ -108,34 +112,75 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
   }
 
   /**
-   * Send a message to Claude CLI and get response
+   * Send a message to Claude CLI and get response with intelligent conversation dynamics
    */
   async generateResponse(persona, messages, currentMessage, roomTopic = '', language = 'ja') {
     try {
       const personaId = persona.id;
+      const roomId = currentMessage.roomId || currentMessage.room_id;
       
       // Ensure persona process exists
       await this.createPersonaProcess(persona, roomTopic, language);
       
-      const systemPrompt = this.generateSystemPrompt(persona, roomTopic, language);
+      // Analyze conversation dynamics
+      const roomPersonas = await this.getRoomPersonas(roomId);
+      const conversationState = conversationDynamics.analyzeConversationState(messages, roomPersonas, roomId);
       
-      // Format conversation history
-      const conversationHistory = messages.slice(-10).map(msg => {
-        if (msg.sender_type === 'user') {
-          return `${msg.sender_name}: ${msg.content}`;
-        } else {
-          return `${msg.sender_name}: ${msg.content}`;
+      console.log(`🧠 Conversation analysis for room ${roomId}:`, {
+        phase: conversationState.phase,
+        engagement: conversationState.engagement,
+        momentum: conversationState.momentum,
+        needsIntervention: conversationState.needsIntervention.needed
+      });
+      
+      // Try intelligent response generation first
+      try {
+        const intelligentResponse = await intelligentResponses.generateContextualResponse(
+          persona, 
+          messages, 
+          conversationState, 
+          roomTopic, 
+          language
+        );
+        
+        if (intelligentResponse && intelligentResponse.length > 10) {
+          console.log(`🎯 Intelligent response generated for ${persona.name}: ${intelligentResponse.substring(0, 100)}...`);
+          
+          return {
+            success: true,
+            content: intelligentResponse.trim(),
+            persona_id: persona.id,
+            persona_name: persona.name,
+            responseType: 'intelligent',
+            conversationMetrics: {
+              phase: conversationState.phase,
+              engagement: conversationState.engagement,
+              momentum: conversationState.momentum
+            }
+          };
         }
-      }).join('\n');
+      } catch (intelligentError) {
+        console.warn(`⚠️ Intelligent response failed for ${persona.name}, falling back to Claude CLI:`, intelligentError.message);
+      }
+      
+      // Fallback to Claude CLI with enhanced context
+      const systemPrompt = this.generateEnhancedSystemPrompt(persona, roomTopic, conversationState, language);
+      
+      // Format conversation history with better context
+      const conversationHistory = this.formatConversationHistory(messages, conversationState);
 
-      // Build user prompt for Claude CLI - simplified for faster response
-      const userPrompt = language === 'ja' 
-        ? `会話履歴:\n${conversationHistory}\n\n最新メッセージ: ${currentMessage.sender_name}: ${currentMessage.content}\n\n${persona.name}として自然に返信してください。1-2文で簡潔に、あなたの性格を反映して。`
-        : `Conversation: ${conversationHistory}\n\nLatest: ${currentMessage.sender_name}: ${currentMessage.content}\n\nRespond as ${persona.name} naturally in 1-2 sentences.`;
+      // Build contextual user prompt
+      const userPrompt = this.buildContextualPrompt(
+        conversationHistory, 
+        currentMessage, 
+        persona, 
+        conversationState, 
+        language
+      );
 
-      console.log(`🤖 Generating response for ${persona.name} via Claude CLI...`);
+      console.log(`🤖 Generating contextual response for ${persona.name} via Claude CLI...`);
 
-      // Use Claude CLI with separate system prompt
+      // Use Claude CLI with enhanced prompting
       const response = await this.callClaudeCLI(userPrompt, systemPrompt);
 
       console.log(`✅ Response generated for ${persona.name}: ${response.substring(0, 100)}...`);
@@ -144,7 +189,13 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
         success: true,
         content: response.trim(),
         persona_id: persona.id,
-        persona_name: persona.name
+        persona_name: persona.name,
+        responseType: 'claude_cli',
+        conversationMetrics: {
+          phase: conversationState.phase,
+          engagement: conversationState.engagement,
+          momentum: conversationState.momentum
+        }
       };
 
     } catch (error) {
@@ -155,6 +206,325 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
         persona_id: persona.id,
         persona_name: persona.name
       };
+    }
+  }
+
+  /**
+   * Get room personas for conversation analysis
+   */
+  async getRoomPersonas(roomId) {
+    try {
+      const database = require('../database/database');
+      return await database.all(`
+        SELECT p.* FROM personas p
+        INNER JOIN room_personas rp ON p.id = rp.persona_id
+        WHERE rp.room_id = ?
+      `, [roomId]);
+    } catch (error) {
+      console.error('Error getting room personas:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Generate enhanced system prompt with conversation context
+   */
+  generateEnhancedSystemPrompt(persona, topic, conversationState, language) {
+    const basePrompt = this.generateSystemPrompt(persona, topic, language);
+    
+    const contextEnhancement = language === 'ja' ? `
+
+【現在の会話状況】
+- 会話の段階: ${conversationState.phase}
+- エンゲージメント: ${conversationState.engagement}
+- 会話の勢い: ${Math.round(conversationState.momentum * 100)}%
+- 感情的トーン: ${conversationState.context.emotional}
+
+【応答ガイド】
+- 現在の会話の流れに合わせて適切な応答をしてください
+- エンゲージメントが低い場合は積極的に会話を盛り上げてください
+- 会話が冷めている場合は新しい話題を提供してください
+- 相手の感情状態に共感し、適切に反応してください
+    ` : `
+
+【Current Conversation Context】
+- Phase: ${conversationState.phase}
+- Engagement: ${conversationState.engagement}
+- Momentum: ${Math.round(conversationState.momentum * 100)}%
+- Emotional tone: ${conversationState.context.emotional}
+
+【Response Guidelines】
+- Respond appropriately to the current conversation flow
+- If engagement is low, actively help energize the conversation
+- If conversation is cooling, provide new topics
+- Empathize with others' emotional states and respond appropriately
+    `;
+    
+    return basePrompt + contextEnhancement;
+  }
+
+  /**
+   * Format conversation history with better context awareness
+   */
+  formatConversationHistory(messages, conversationState) {
+    const recentMessages = messages.slice(-8); // Get more context
+    
+    return recentMessages.map((msg, index) => {
+      const timestamp = new Date(msg.timestamp);
+      const timeAgo = this.getTimeAgoString(timestamp);
+      
+      // Add context markers for important messages
+      let contextMarker = '';
+      if (msg.content.includes('@')) contextMarker = '[MENTION] ';
+      if (msg.content.includes('?') || msg.content.includes('？')) contextMarker = '[QUESTION] ';
+      if (msg.content.length > 100) contextMarker = '[DETAILED] ';
+      
+      return `${contextMarker}${msg.sender_name} (${timeAgo}): ${msg.content}`;
+    }).join('\n');
+  }
+
+  /**
+   * Build contextual user prompt based on conversation dynamics
+   */
+  buildContextualPrompt(conversationHistory, currentMessage, persona, conversationState, language) {
+    const { phase, engagement, needsIntervention } = conversationState;
+    
+    let contextualInstructions = '';
+    
+    if (language === 'ja') {
+      // Add specific instructions based on conversation state
+      if (needsIntervention.needed) {
+        switch (needsIntervention.reason) {
+          case 'cooling_conversation':
+            contextualInstructions = '\n\n【特別指示】会話が冷めかけています。新しい興味深い話題で会話を活性化してください。';
+            break;
+          case 'unbalanced_participation':
+            contextualInstructions = '\n\n【特別指示】参加者のバランスが偏っています。他の参加者も含めて全員が参加しやすい質問をしてください。';
+            break;
+          case 'surface_conversation':
+            contextualInstructions = '\n\n【特別指示】会話が表面的になっています。より深い洞察や個人的な体験を共有してください。';
+            break;
+        }
+      }
+      
+      if (phase === 'flowing') {
+        contextualInstructions += '\n\n会話が良い流れです。この勢いを維持しながら自然に参加してください。';
+      } else if (engagement === 'low') {
+        contextualInstructions += '\n\n エンゲージメントが低めです。積極的で魅力的な応答を心がけてください。';
+      }
+      
+      return `会話履歴:
+${conversationHistory}
+
+最新メッセージ: ${currentMessage.sender_name}: ${currentMessage.content}${contextualInstructions}
+
+${persona.name}として、現在の会話の文脈と雰囲気を理解し、あなたの性格特性を活かした自然な返信をしてください。1-2文で簡潔に、会話の流れに適切に貢献してください。`;
+    } else {
+      // English instructions
+      if (needsIntervention.needed) {
+        switch (needsIntervention.reason) {
+          case 'cooling_conversation':
+            contextualInstructions = '\n\n[SPECIAL INSTRUCTION] The conversation is cooling down. Energize it with an interesting new topic.';
+            break;
+          case 'unbalanced_participation':
+            contextualInstructions = '\n\n[SPECIAL INSTRUCTION] Participation is unbalanced. Ask inclusive questions that encourage everyone to participate.';
+            break;
+          case 'surface_conversation':
+            contextualInstructions = '\n\n[SPECIAL INSTRUCTION] The conversation is staying surface-level. Share deeper insights or personal experiences.';
+            break;
+        }
+      }
+      
+      if (phase === 'flowing') {
+        contextualInstructions += '\n\nThe conversation has good momentum. Maintain this flow while participating naturally.';
+      } else if (engagement === 'low') {
+        contextualInstructions += '\n\nEngagement is low. Be more active and engaging in your response.';
+      }
+      
+      return `Conversation history:
+${conversationHistory}
+
+Latest message: ${currentMessage.sender_name}: ${currentMessage.content}${contextualInstructions}
+
+As ${persona.name}, understand the current conversation context and atmosphere, and respond naturally using your personality traits. Keep it concise (1-2 sentences) while contributing meaningfully to the conversation flow.`;
+    }
+  }
+
+  /**
+   * Get human-readable time ago string
+   */
+  getTimeAgoString(timestamp) {
+    const now = new Date();
+    const diffMs = now - timestamp;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+    return `${Math.floor(diffMins / 1440)}d ago`;
+  }
+
+  /**
+   * Select optimal persona for auto-message based on conversation analysis
+   */
+  selectOptimalPersona(roomPersonas, recentMessages, conversationState) {
+    // Analyze recent participation
+    const participationCounts = {};
+    roomPersonas.forEach(p => participationCounts[p.id] = 0);
+    
+    recentMessages.slice(0, 10).forEach(msg => {
+      if (msg.sender_type === 'persona' && participationCounts[msg.sender_id] !== undefined) {
+        participationCounts[msg.sender_id]++;
+      }
+    });
+
+    // Find least active persona (for balance)
+    const leastActivePersona = roomPersonas.reduce((min, persona) => {
+      const count = participationCounts[persona.id] || 0;
+      const minCount = participationCounts[min.id] || 0;
+      return count < minCount ? persona : min;
+    });
+
+    // Consider personality traits for intervention type
+    if (conversationState.needsIntervention.needed) {
+      switch (conversationState.needsIntervention.reason) {
+        case 'cooling_conversation':
+          // Select extraverted persona to energize
+          const extravert = roomPersonas.find(p => p.extraversion >= 4) || leastActivePersona;
+          return extravert;
+          
+        case 'unbalanced_participation':
+          // Select agreeable persona to include others
+          const agreeable = roomPersonas.find(p => p.agreeableness >= 4) || leastActivePersona;
+          return agreeable;
+          
+        case 'surface_conversation':
+          // Select open persona to add depth
+          const open = roomPersonas.find(p => p.openness >= 4) || leastActivePersona;
+          return open;
+          
+        default:
+          return leastActivePersona;
+      }
+    }
+
+    // Default to least active for balance
+    return leastActivePersona;
+  }
+
+  /**
+   * Calculate intelligent delays based on conversation state
+   */
+  calculateIntelligentDelays(conversationState) {
+    const { phase, engagement, momentum } = conversationState;
+    
+    let initialDelay = 2000; // Base 2 seconds
+    let thinkingTime = 1500; // Base 1.5 seconds
+    
+    // Adjust based on conversation phase
+    switch (phase) {
+      case 'flowing':
+        initialDelay *= 0.8; // Quicker to join flowing conversation
+        thinkingTime *= 0.7;
+        break;
+      case 'cooling':
+        initialDelay *= 1.2; // More careful entry
+        thinkingTime *= 1.3;
+        break;
+      case 'dormant':
+        initialDelay *= 0.6; // Quick intervention needed
+        thinkingTime *= 0.8;
+        break;
+    }
+    
+    // Adjust based on engagement
+    if (engagement === 'high') {
+      initialDelay *= 1.3; // Be more careful with high engagement
+      thinkingTime *= 1.2;
+    } else if (engagement === 'low') {
+      initialDelay *= 0.8; // Move faster with low engagement
+      thinkingTime *= 0.9;
+    }
+    
+    // Add momentum-based adjustments
+    if (momentum > 0.7) {
+      initialDelay *= 1.2; // Don't interrupt high momentum
+    } else if (momentum < 0.3) {
+      initialDelay *= 0.7; // Act faster with low momentum
+    }
+    
+    // Add randomness for natural feel
+    initialDelay += Math.random() * 1000;
+    thinkingTime += Math.random() * 1000;
+    
+    return {
+      initial: Math.max(1000, Math.min(initialDelay, 5000)), // 1-5 seconds
+      thinking: Math.max(800, Math.min(thinkingTime, 4000))  // 0.8-4 seconds
+    };
+  }
+
+  /**
+   * Build auto-conversation prompt based on conversation state
+   */
+  buildAutoConversationPrompt(conversationState, language) {
+    const { phase, engagement, needsIntervention } = conversationState;
+    
+    if (language === 'ja') {
+      let basePrompt = '会話が静かになっています。';
+      
+      if (needsIntervention.needed) {
+        switch (needsIntervention.reason) {
+          case 'cooling_conversation':
+            basePrompt += '新しい興味深い話題で会話を活性化してください。';
+            break;
+          case 'unbalanced_participation':
+            basePrompt += '他の参加者も参加しやすい質問をしてください。';
+            break;
+          case 'surface_conversation':
+            basePrompt += 'より深い話題や個人的な体験を共有してください。';
+            break;
+          default:
+            basePrompt += '自然に新しい話題を始めてください。';
+        }
+      } else {
+        basePrompt += 'あなたの性格に合った自然な会話を始めてください。';
+      }
+      
+      return basePrompt + ' 1-2文で簡潔に、魅力的に話してください。';
+      
+    } else {
+      let basePrompt = 'The conversation has become quiet.';
+      
+      if (needsIntervention.needed) {
+        switch (needsIntervention.reason) {
+          case 'cooling_conversation':
+            basePrompt += ' Please energize the conversation with an interesting new topic.';
+            break;
+          case 'unbalanced_participation':
+            basePrompt += ' Please ask inclusive questions that encourage everyone to participate.';
+            break;
+          case 'surface_conversation':
+            basePrompt += ' Please share deeper insights or personal experiences.';
+            break;
+          default:
+            basePrompt += ' Please naturally start a new topic.';
+        }
+      } else {
+        basePrompt += ' Please start a natural conversation that fits your personality.';
+      }
+      
+      return basePrompt + ' Keep it engaging and concise (1-2 sentences).';
+    }
+  }
+
+  /**
+   * Render avatar HTML for typing indicators and messages
+   */
+  renderAvatarHTML(persona) {
+    if (persona.avatar_type === 'image' && persona.avatar_value) {
+      return `<img src="/uploads/${persona.avatar_value}" alt="${persona.name}" class="avatar-image">`;
+    } else {
+      return persona.avatar_value || '🤖';
     }
   }
 
@@ -719,27 +1089,99 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
       clearTimeout(this.roomTimers.get(roomId));
     }
     
-    // Set random timer between 15 seconds to 1 minute  
-    const delay = 15000 + Math.random() * 45000; // 15s - 60s
+    // Calculate delay first
+    this.calculateDynamicDelay(database, roomId).then(delay => {
+      const timer = setTimeout(async () => {
+        try {
+          console.log(`🤖 Auto-conversation triggered for room ${roomId}`);
+          await this.generateAutoMessage(database, roomId, io, activeRooms);
+          
+          // Schedule next auto-conversation with dynamic timing
+          this.scheduleNextAutoConversation(database, roomId, io, activeRooms);
+        } catch (error) {
+          console.error('Error in auto-conversation:', error);
+          // Retry after delay
+          setTimeout(() => {
+            this.startAutoConversation(database, roomId, io, activeRooms);
+          }, 60000); // Retry after 1 minute
+        }
+      }, delay);
+      
+      this.roomTimers.set(roomId, timer);
+    }).catch(error => {
+      console.error('Error calculating delay, using default:', error);
+      const timer = setTimeout(async () => {
+        try {
+          await this.generateAutoMessage(database, roomId, io, activeRooms);
+          this.scheduleNextAutoConversation(database, roomId, io, activeRooms);
+        } catch (error) {
+          console.error('Error in auto-conversation:', error);
+          setTimeout(() => {
+            this.startAutoConversation(database, roomId, io, activeRooms);
+          }, 60000);
+        }
+      }, 30000);
+      
+      this.roomTimers.set(roomId, timer);
+    });
+  }
+
+  /**
+   * Schedule next auto-conversation with intelligent timing
+   */
+  async scheduleNextAutoConversation(database, roomId, io, activeRooms) {
+    const delay = await this.calculateDynamicDelay(database, roomId);
+    console.log(`⏰ Next auto-conversation for room ${roomId} in ${Math.round(delay/1000)}s`);
     
     const timer = setTimeout(async () => {
       try {
-        console.log(`🤖 Auto-conversation triggered for room ${roomId}`);
         await this.generateAutoMessage(database, roomId, io, activeRooms);
-        
-        // Schedule next auto-conversation
-        this.startAutoConversation(database, roomId, io, activeRooms);
+        this.scheduleNextAutoConversation(database, roomId, io, activeRooms);
       } catch (error) {
-        console.error('Error in auto-conversation:', error);
-        // Retry after delay
+        console.error('Error in scheduled auto-conversation:', error);
         setTimeout(() => {
-          this.startAutoConversation(database, roomId, io, activeRooms);
-        }, 60000); // Retry after 1 minute
+          this.scheduleNextAutoConversation(database, roomId, io, activeRooms);
+        }, 60000);
       }
     }, delay);
     
     this.roomTimers.set(roomId, timer);
-    console.log(`⏰ Auto-conversation scheduled for room ${roomId} in ${Math.round(delay/1000)}s`);
+  }
+
+  /**
+   * Calculate dynamic delay based on conversation state
+   */
+  async calculateDynamicDelay(database, roomId) {
+    try {
+      // Get recent messages for analysis
+      const messages = await database.all(`
+        SELECT * FROM messages 
+        WHERE room_id = ? 
+        ORDER BY timestamp DESC 
+        LIMIT 15
+      `, [roomId]);
+
+      if (messages.length === 0) {
+        return 30000; // 30s default for empty rooms
+      }
+
+      // Get room personas for analysis
+      const roomPersonas = await this.getRoomPersonas(roomId);
+      
+      // Analyze conversation state
+      const conversationState = conversationDynamics.analyzeConversationState(messages, roomPersonas, roomId);
+      
+      // Use conversation dynamics to determine optimal timing
+      const suggestedTiming = conversationState.suggestedTiming || 30000;
+      
+      console.log(`🧠 Dynamic timing for room ${roomId}: ${Math.round(suggestedTiming/1000)}s (phase: ${conversationState.phase}, momentum: ${Math.round(conversationState.momentum * 100)}%)`);
+      
+      return suggestedTiming;
+      
+    } catch (error) {
+      console.error('Error calculating dynamic delay:', error);
+      return 15000 + Math.random() * 45000; // Fallback to random 15-60s
+    }
   }
 
   /**
@@ -754,7 +1196,7 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
   }
 
   /**
-   * Generate automatic message from AI persona
+   * Generate intelligent automatic message from AI persona
    */
   async generateAutoMessage(database, roomId, io, activeRooms) {
     try {
@@ -787,63 +1229,96 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
         SELECT * FROM messages 
         WHERE room_id = ? 
         ORDER BY timestamp DESC 
-        LIMIT 10
+        LIMIT 15
       `, [roomId]);
 
-      // Don't trigger if there was recent activity (within 5 minutes)
+      // Analyze conversation dynamics
+      const conversationState = conversationDynamics.analyzeConversationState(recentMessages, roomPersonas, roomId);
+      
+      console.log(`🧠 Auto-message analysis for room ${roomId}:`, {
+        phase: conversationState.phase,
+        engagement: conversationState.engagement,
+        momentum: conversationState.momentum,
+        intervention: conversationState.needsIntervention
+      });
+
+      // Determine if auto-message should proceed based on conversation state
       const lastMessage = recentMessages[0];
-      if (lastMessage) {
-        const timeSinceLastMessage = Date.now() - new Date(lastMessage.timestamp).getTime();
-        if (timeSinceLastMessage < 5 * 60 * 1000) { // 5 minutes
-          console.log(`⏭️ Skipping auto-message - recent activity in room ${roomId}`);
-          return;
-        }
+      const timeSinceLastMessage = lastMessage ? Date.now() - new Date(lastMessage.timestamp).getTime() : Infinity;
+      const minutesSinceActivity = timeSinceLastMessage / (60 * 1000);
+
+      // Intelligent auto-trigger logic
+      if (conversationState.phase === 'flowing' && minutesSinceActivity < 2) {
+        console.log(`⏭️ Skipping auto-message - conversation is flowing naturally`);
+        return;
       }
 
-      // Pick a random persona to start conversation
-      const randomPersona = roomPersonas[Math.floor(Math.random() * roomPersonas.length)];
+      if (conversationState.engagement === 'high' && minutesSinceActivity < 3) {
+        console.log(`⏭️ Skipping auto-message - high engagement detected`);
+        return;
+      }
 
-      // Create a conversation starter prompt
-      const starterPrompts = [
-        "How are things going? Anything interesting happening lately?",
-        "It's a nice day today. How is everyone doing?",
-        "By the way, what happened with that thing we were discussing earlier?",
-        "Have you discovered or learned anything new recently?",
-        "How are you feeling right now?",
-        "Is there anything on your mind lately?",
-        "What do you all think about this?",
-        "It's a bit quiet here. Is anyone around?"
-      ];
+      // Select optimal persona for auto-message
+      const optimalPersona = this.selectOptimalPersona(roomPersonas, recentMessages, conversationState);
 
-      const randomPrompt = starterPrompts[Math.floor(Math.random() * starterPrompts.length)];
+      // Calculate intelligent timing delays
+      const delays = this.calculateIntelligentDelays(conversationState);
 
-      // Add humanized delay
-      const humanDelay = 2000 + Math.random() * 3000; // 2-5 seconds
-      await new Promise(resolve => setTimeout(resolve, humanDelay));
+      // Initial humanized delay
+      await new Promise(resolve => setTimeout(resolve, delays.initial));
 
-      // Show typing indicator
+      // Show typing indicator with enhanced avatar display
       if (io) {
-        io.to(`room-${roomId}`).emit('user:typing', {
-          userName: randomPersona.name,
+        const avatarHtml = this.renderAvatarHTML(optimalPersona);
+        io.to(`room-${roomId}`).emit('persona:typing', {
+          persona: optimalPersona.name,
+          avatar: avatarHtml,
           isTyping: true,
-          avatar: randomPersona.avatar_value
+          timestamp: new Date().toISOString()
         });
       }
 
-      // Thinking time
-      const thinkingTime = 1000 + Math.random() * 2000; // 1-3 seconds
-      await new Promise(resolve => setTimeout(resolve, thinkingTime));
+      // Thinking time based on conversation complexity
+      await new Promise(resolve => setTimeout(resolve, delays.thinking));
 
-      // Generate contextual response
-      const systemPrompt = this.generateSystemPrompt(randomPersona, room.topic, room.language || 'ja');
-      const userPrompt = `The conversation has become quiet, so please naturally start a new topic. Based on recent message history, say something like "${randomPrompt}" in 1-2 sentences to engage others.`;
+      let response;
+      let responseType = 'intelligent';
 
-      const response = await this.callClaudeCLI(userPrompt, systemPrompt);
+      // Try intelligent response generation first
+      try {
+        // Create a mock message object for auto-generation context
+        const mockMessage = {
+          roomId: roomId,
+          sender_name: 'system',
+          content: '_auto_trigger',
+          timestamp: new Date().toISOString()
+        };
+
+        response = await intelligentResponses.generateContextualResponse(
+          optimalPersona, 
+          recentMessages, 
+          conversationState, 
+          room.topic, 
+          room.language || 'ja'
+        );
+
+        console.log(`🎯 Intelligent auto-response generated for ${optimalPersona.name}: ${response.substring(0, 100)}...`);
+
+      } catch (intelligentError) {
+        console.warn(`⚠️ Intelligent auto-response failed, using Claude CLI fallback:`, intelligentError.message);
+        
+        // Fallback to enhanced Claude CLI
+        const systemPrompt = this.generateEnhancedSystemPrompt(optimalPersona, room.topic, conversationState, room.language || 'ja');
+        const userPrompt = this.buildAutoConversationPrompt(conversationState, room.language || 'ja');
+        
+        response = await this.callClaudeCLI(userPrompt, systemPrompt);
+        responseType = 'claude_cli';
+      }
 
       // Hide typing indicator
       if (io) {
-        io.to(`room-${roomId}`).emit('user:typing', {
-          userName: randomPersona.name,
+        io.to(`room-${roomId}`).emit('persona:typing', {
+          persona: optimalPersona.name,
           isTyping: false
         });
       }
@@ -852,9 +1327,9 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
       const result = await database.createMessage(
         roomId,
         'persona',
-        randomPersona.name,
+        optimalPersona.name,
         response.trim(),
-        randomPersona.id,
+        optimalPersona.id,
         null
       );
 
