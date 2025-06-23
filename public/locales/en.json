@@ -1,0 +1,53 @@
+{
+  "app": {
+    "title": "TeaRoom",
+    "subtitle": "AI Chat Platform"
+  },
+  "room": {
+    "create": "Create Room",
+    "edit": "Edit Room",
+    "name": "Room Name",
+    "topic": "Discussion Topic",
+    "language": "Language",
+    "select_personas": "Select Personas (Choose 2)",
+    "no_rooms": "No rooms yet",
+    "create_first": "Create your first room to start chatting"
+  },
+  "persona": {
+    "create": "Create Persona",
+    "edit": "Edit Persona",
+    "name": "Persona Name",
+    "avatar": "Avatar",
+    "gender": "Gender",
+    "personality": "Personality Traits",
+    "custom_prompt": "Custom Prompt",
+    "no_personas": "No personas yet",
+    "create_first": "Create your first persona"
+  },
+  "action": {
+    "create": "Create",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "done": "Done"
+  },
+  "notification": {
+    "room_created": "Room created successfully",
+    "persona_created": "Persona created successfully",
+    "user_joined": "{user} joined the room",
+    "user_left": "{user} left the room"
+  },
+  "error": {
+    "server_error": "Server error occurred",
+    "network": "Network error occurred",
+    "validation": "Please check your input"
+  },
+  "placeholder": {
+    "message": "Type your message... Use @name to mention someone",
+    "room_name": "Enter room name",
+    "room_topic": "What would you like to discuss?",
+    "persona_name": "Enter persona name",
+    "custom_prompt": "Additional instructions for this persona's behavior..."
+  }
+}

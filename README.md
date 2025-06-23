@@ -1,34 +1,17 @@
-# TeaRoom 🍵
+# TeaRoom 2.0
 
-A conversational AI platform where multiple Claude instances chat with distinct personalities using the Big Five personality model.
+Modern AI chat platform where multiple Claude instances chat with distinct personalities using the Big Five personality model.
 
-## Overview
+## Quick Start
 
-TeaRoom creates an environment where AI personas can have natural conversations. Each persona has unique personality traits based on the Big Five model, leading to diverse and engaging interactions through a beautiful web interface.
+### Requirements
+- Node.js (v14 or higher)
+- Claude CLI (https://claude.ai/code)
 
-## ✨ Features
+### Installation & Setup
 
-- **🎭 Personality-Driven AI**: Create unique personas with Big Five personality traits
-- **🖼️ Custom Avatars**: Upload images or choose emojis for persona icons
-- **🌐 Web-based Interface**: Intuitive setup wizard and real-time chat visualization
-- **💬 User Interaction**: Jump into conversations with one-time queries
-- **🎯 Goal-Oriented Chats**: Conversations automatically conclude with summary reports
-- **🌍 Multi-language Support**: Conversations in English or Japanese
-- **⚡ Real-time Updates**: Smooth message animations and live connection status
-
-## 🚀 Quick Start
-
-### Prerequisites
-- **Claude Code** (claude.ai/code) - Required for AI functionality
-- **Node.js** (v14+) and npm
-- **macOS or Linux** (tested on macOS)
-
-### Installation
-
-1. **Clone the repository**
+1. **Install dependencies**
    ```bash
-   git clone https://github.com/kurogedelic/TeaRoom.git
-   cd TeaRoom
    npm install
    ```
 
@@ -36,123 +19,88 @@ TeaRoom creates an environment where AI personas can have natural conversations.
    ```bash
    ./start-tearoom.sh
    ```
+   
+   The application will:
+   - Initialize SQLite database automatically
+   - Start the API server
+   - Start the web interface
+   - Open your browser to the interface
 
-3. **Open in browser**
-   - Browser opens automatically at http://localhost:8080
-   - Use the setup wizard to create personas and start conversations
+### First Time Setup
 
-## 🎭 Creating Personas
+When you first run TeaRoom, it will automatically:
+- Create the SQLite database (`tearoom.db`)
+- Initialize database tables
+- Create necessary directories
+- Generate default settings
 
-1. Click "Manage Personas" in the web interface
-2. Create new personas with:
-   - Custom name and avatar (image upload or emoji)
-   - Big Five personality traits (1-5 scale)
-   - Personal introduction
-3. Each persona gets unique conversation patterns based on their traits
+Your first steps:
+1. Create 2 personas (minimum required for conversation)
+2. Create a room and assign both personas
+3. Start chatting!
 
-### Starting Conversations
+## Usage
 
-1. **Web Interface** (Recommended)
-   - Navigate to http://localhost:8080
-   - Use the setup wizard to configure your chat
-   - Select language, personas, and optional topic
+### Creating Personas
+- Click "Create Persona" in the sidebar
+- Set personality traits using Big Five model sliders
+- Choose an emoji or upload an avatar
+- Optional: Add custom prompts for behavior
 
-2. **Command Line**
-   ```bash
-   ./manage-personas.sh  # Create/manage personas
-   ./start-tearoom.sh    # Start the platform
-   ```
+### Creating Rooms
+- Click "Create Room" in the sidebar
+- Select exactly 2 personas for the conversation
+- Set language preference (Japanese/English)
+- Add optional discussion topic
 
-### During Conversations
+### Features
+- **Real-time chat** with AI personas
+- **Message search** - Click search icon in chat header
+- **Internationalization** - Switch between Japanese/English
+- **Dark/Light themes** - Auto-detects system preference
+- **AI interruption** - Send messages anytime to interrupt AI responses
+- **@Mentions** - Type @PersonaName to mention specific personas
 
-- **Watch Live**: Real-time message updates in the web interface
-- **User Interaction**: Click "Interrupt" to send one-time queries
-- **Auto-completion**: Conversations end with summary reports when goals are achieved
+## Architecture
 
-## 🏗️ Architecture
+- **Backend**: Node.js + Express + Socket.io
+- **Database**: SQLite with automatic migrations
+- **Frontend**: Vanilla JavaScript with modern CSS
+- **AI**: Claude CLI integration with streaming responses
 
-TeaRoom consists of three main components:
-
-- **Chat Server** (`server.js`): Message routing between personas
-- **Web Interface** (`web-preview.js`): Browser-based UI with Socket.io
-- **Claude Integration** (`claude-oneshot.sh`): AI conversation engine
-
-## 🎨 Customization
-
-### Big Five Personality Traits
-
-Each persona is defined by five core traits (1-5 scale):
-
-1. **Extraversion**: Reserved ← → Social
-2. **Agreeableness**: Analytical ← → Cooperative  
-3. **Conscientiousness**: Spontaneous ← → Organized
-4. **Neuroticism**: Stable ← → Sensitive
-5. **Openness**: Practical ← → Creative
-
-### Avatar Options
-
-- **Image Upload**: Upload custom avatar images (up to 5MB)
-- **Emoji Selection**: Choose from 60+ built-in emojis
-- **Automatic Fallback**: Default personas use placeholder icons
-
-## 🛠️ Development
-
-### Project Structure
+## File Structure
 
 ```
 TeaRoom/
-├── start-tearoom.sh        # Main launcher
-├── cleanup-tearoom.sh      # Process cleanup
-├── server.js              # Chat message server
-├── web-preview.js         # Web interface & API
-├── claude-oneshot.sh      # Claude conversation engine
-├── public/                # Web assets
-│   ├── wizard.html        # Setup wizard
-│   ├── chat.html         # Live chat interface
-│   ├── personas.html     # Persona management
-│   └── uploads/          # User avatar uploads
-└── instances/            # Persona storage
-    └── README.md         # Setup instructions
+├── start-tearoom.sh       # Main startup script
+├── tearoom.db            # SQLite database (auto-created)
+├── server/
+│   ├── app.js            # Express application
+│   ├── database/         # Database layer
+│   ├── routes/           # API endpoints
+│   └── services/         # Claude integration
+└── public/
+    ├── index.html        # Main interface
+    ├── css/              # Styles and themes  
+    ├── js/               # Frontend application
+    └── locales/          # i18n translations
 ```
 
-### API Endpoints
+## Stopping TeaRoom
 
-- `GET /api/status`: Check conversation status
-- `GET /api/personas`: List available personas  
-- `POST /api/start`: Start conversation
-- `POST /api/stop`: End conversation
-- `POST /api/user-message`: Send user interruption
-- `POST /api/upload-avatar`: Upload persona avatar
+Press `Ctrl+C` in the terminal where you started TeaRoom, or run:
+```bash
+killall node
+```
 
-## 🔧 Troubleshooting
-
-### Common Issues
+## Troubleshooting
 
 - **Port conflicts**: TeaRoom auto-finds available ports
-- **Process cleanup**: Use `./cleanup-tearoom.sh` to reset
-- **Claude not found**: Ensure Claude Code is installed and accessible
+- **Database issues**: Delete `tearoom.db` to reset
+- **Claude CLI errors**: Ensure Claude CLI is installed and authenticated
+- **Permission errors**: Check file permissions on project directory
 
-### Manual Cleanup
-
+For detailed logs, start with:
 ```bash
-./cleanup-tearoom.sh  # Clean up all processes
-killall node          # Emergency stop
+./start-tearoom.sh --verbose
 ```
-
-## 📝 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## 👨‍💻 Author
-
-Created by **Leo Kuroshita** ([@kurogedelic](https://github.com/kurogedelic))
-
-## 🙏 Acknowledgments
-
-- Built for use with [Claude Code](https://claude.ai/code)
-- Inspired by personality psychology and the Big Five model
-- Designed for creative AI conversations and personality exploration
-
----
-
-*Made with ❤️ and ☕ for better AI conversations*

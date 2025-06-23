@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# TeaRoom Web-based Launch Script
+# TeaRoom 2.0 Launch Script
 
-echo "🍵 Starting TeaRoom Web Interface..."
+echo "🍵 Starting TeaRoom 2.0..."
 
 # Parse arguments
 VERBOSE=false
@@ -21,89 +21,117 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
-# Project directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+# Function to check if port is available
+check_port() {
+    local port=$1
+    if lsof -i:$port >/dev/null 2>&1; then
+        return 1  # Port is in use
+    else
+        return 0  # Port is available
+    fi
+}
 
-# Cleanup any existing processes first
-echo -e "${YELLOW}🧹 Cleaning up existing processes...${NC}"
-pkill -f "claude-oneshot.sh" 2>/dev/null || true
-pkill -f "claude.*TeaRoom" 2>/dev/null || true
-killall node 2>/dev/null || true
+# Function to find available port
+find_available_port() {
+    local start_port=$1
+    local port=$start_port
+    
+    while [ $port -lt $((start_port + 100)) ]; do
+        if check_port $port; then
+            echo $port
+            return 0
+        fi
+        port=$((port + 1))
+    done
+    
+    echo "Error: No available ports found"
+    exit 1
+}
 
-# Clean up old port files
-rm -f .server-port .preview-port
+# Clean up function
+cleanup() {
+    echo -e "\n${YELLOW}🧹 Shutting down TeaRoom...${NC}"
+    
+    if [ ! -z "$SERVER_PID" ] && kill -0 $SERVER_PID 2>/dev/null; then
+        echo "Stopping TeaRoom server (PID: $SERVER_PID)..."
+        kill $SERVER_PID 2>/dev/null
+        wait $SERVER_PID 2>/dev/null
+    fi
+    
+    # Clean up port files
+    rm -f .server-port
+    
+    echo -e "${GREEN}✅ TeaRoom shutdown complete${NC}"
+    exit 0
+}
 
-# Check npm installation
+# Set up signal handlers
+trap cleanup SIGINT SIGTERM
+
+# Kill any existing TeaRoom processes
+echo "🧹 Cleaning up existing processes..."
+pkill -f "node.*server/app.js" 2>/dev/null || true
+rm -f .server-port
+
+# Check if Node.js is installed
+if ! command -v node >/dev/null 2>&1; then
+    echo -e "${RED}❌ Node.js is not installed. Please install Node.js and try again.${NC}"
+    exit 1
+fi
+
+# Check if npm dependencies are installed
 if [ ! -d "node_modules" ]; then
-    echo "📦 Installing dependencies..."
+    echo -e "${YELLOW}📦 Installing dependencies...${NC}"
     npm install
 fi
 
-# Start chat server
-echo -e "${GREEN}✅ Starting chat server...${NC}"
+# First time setup
+if [ ! -f "tearoom.db" ]; then
+    echo -e "${BLUE}🔧 First time setup - initializing database...${NC}"
+fi
+
+# Create necessary directories
+mkdir -p public/uploads
+mkdir -p server/logs
+mkdir -p instances
+
+# Find available port starting from 9000
+echo "🔍 Finding available port..."
+SERVER_PORT=$(find_available_port 9000)
+echo $SERVER_PORT > .server-port
+
+# Start TeaRoom 2.0 server
+echo -e "${BLUE}🚀 Starting TeaRoom 2.0 server on port $SERVER_PORT...${NC}"
 if [ "$VERBOSE" = true ]; then
-    node server.js &
+    PORT=$SERVER_PORT node server/app.js &
 else
-    node server.js > /dev/null 2>&1 &
+    PORT=$SERVER_PORT node server/app.js > /dev/null 2>&1 &
 fi
 SERVER_PID=$!
-echo "Server PID: $SERVER_PID"
 
 # Wait for server startup
 sleep 3
 
-# Read server port
-if [ -f ".server-port" ]; then
-    SERVER_PORT=$(cat .server-port)
-    echo "Chat server started on port: $SERVER_PORT"
-else
-    SERVER_PORT="3000"
+# Check if server started successfully
+if ! kill -0 $SERVER_PID 2>/dev/null; then
+    echo -e "${RED}❌ Failed to start TeaRoom server${NC}"
+    exit 1
 fi
 
-# Start web preview with wizard
-echo -e "${BLUE}🌐 Starting web interface...${NC}"
-if [ "$VERBOSE" = true ]; then
-    VERBOSE=true node web-preview.js &
-else
-    node web-preview.js > /dev/null 2>&1 &
-fi
-PREVIEW_PID=$!
-echo "Web interface PID: $PREVIEW_PID"
+echo -e "${GREEN}✅ TeaRoom 2.0 server started successfully${NC}"
+echo -e "${GREEN}🌐 TeaRoom is running at: http://localhost:$SERVER_PORT${NC}"
 
-# Wait for web preview to start and read the port
-sleep 2
-if [ -f ".preview-port" ]; then
-    PREVIEW_PORT=$(cat .preview-port)
-    echo "Web interface started on port: $PREVIEW_PORT"
-else
-    PREVIEW_PORT="8080"
+# Auto-open browser on macOS
+if command -v open >/dev/null 2>&1; then
+    echo -e "${BLUE}🌐 Opening browser...${NC}"
+    open "http://localhost:$SERVER_PORT"
 fi
 
-echo -e "\n${YELLOW}📢 TeaRoom is running!${NC}"
-echo "Chat server: http://localhost:${SERVER_PORT}"
-echo "Web interface: http://localhost:${PREVIEW_PORT}"
+echo -e "${YELLOW}💡 Press Ctrl+C to stop TeaRoom${NC}"
 echo ""
-echo -e "${GREEN}🌐 Opening in browser...${NC}"
+echo "First time? Create 2 personas, then create a room to start chatting!"
 
-# Open the main page (will auto-redirect to wizard if needed)
-if command -v open &> /dev/null; then
-    open "http://localhost:${PREVIEW_PORT}"
-elif command -v xdg-open &> /dev/null; then
-    xdg-open "http://localhost:${PREVIEW_PORT}"
-fi
-
-echo ""
-echo -e "${YELLOW}Usage:${NC}"
-echo "  Normal mode: ./start-tearoom.sh"
-echo "  Verbose mode: ./start-tearoom.sh --verbose"
-echo ""
-echo "Press Ctrl+C to stop all services"
-
-# Cleanup on exit
-trap "echo 'Shutting down...'; kill $SERVER_PID $PREVIEW_PID 2>/dev/null; rm -f .preview-port .server-port; exit" INT
-
-# Wait
-wait
+# Keep the script running
+wait $SERVER_PID

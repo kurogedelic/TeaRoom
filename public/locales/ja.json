@@ -1,0 +1,53 @@
+{
+  "app": {
+    "title": "TeaRoom",
+    "subtitle": "AI チャットプラットフォーム"
+  },
+  "room": {
+    "create": "ルーム作成",
+    "edit": "ルーム編集",
+    "name": "ルーム名",
+    "topic": "議題",
+    "language": "言語",
+    "select_personas": "ペルソナ選択（2つ選んでください）",
+    "no_rooms": "ルームがありません",
+    "create_first": "最初のルームを作成してチャットを始めましょう"
+  },
+  "persona": {
+    "create": "ペルソナ作成",
+    "edit": "ペルソナ編集",
+    "name": "ペルソナ名",
+    "avatar": "アバター",
+    "gender": "性別",
+    "personality": "性格特性",
+    "custom_prompt": "カスタムプロンプト",
+    "no_personas": "ペルソナがありません",
+    "create_first": "最初のペルソナを作成しましょう"
+  },
+  "action": {
+    "create": "作成",
+    "edit": "編集",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "done": "完了"
+  },
+  "notification": {
+    "room_created": "ルームが作成されました",
+    "persona_created": "ペルソナが作成されました",
+    "user_joined": "{user}がルームに参加しました",
+    "user_left": "{user}がルームを退出しました"
+  },
+  "error": {
+    "server_error": "サーバーエラーが発生しました",
+    "network": "ネットワークエラーが発生しました",
+    "validation": "入力内容をご確認ください"
+  },
+  "placeholder": {
+    "message": "メッセージを入力... @名前 でメンションできます",
+    "room_name": "ルーム名を入力",
+    "room_topic": "何について話しますか？",
+    "persona_name": "ペルソナ名を入力",
+    "custom_prompt": "このペルソナの行動に関する追加の指示..."
+  }
+}

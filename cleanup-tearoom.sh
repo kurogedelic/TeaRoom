@@ -8,28 +8,28 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${YELLOW}🧹 TeaRoom Cleanup Starting...${NC}"
+echo -e "${YELLOW}🧹 TeaRoom 2.0 Cleanup Starting...${NC}"
 
-# Kill all Node.js processes
-echo "Stopping Node.js processes..."
-killall node 2>/dev/null && echo -e "${GREEN}✓ Node.js processes stopped${NC}" || echo "No Node.js processes found"
+# Kill specific TeaRoom processes
+echo "Stopping TeaRoom 2.0 server..."
+pkill -f "node.*server/app.js" 2>/dev/null && echo -e "${GREEN}✓ TeaRoom server stopped${NC}" || echo "No TeaRoom server found"
 
-# Kill Claude processes
-echo "Stopping Claude processes..."
-pkill -f "claude-oneshot.sh" 2>/dev/null && echo -e "${GREEN}✓ Claude oneshot processes stopped${NC}" || echo "No Claude oneshot processes found"
-pkill -f "claude.*TeaRoom" 2>/dev/null && echo -e "${GREEN}✓ Claude TeaRoom processes stopped${NC}" || echo "No Claude TeaRoom processes found"
+# Kill any remaining Node.js processes if requested
+if [ "$1" = "--force" ]; then
+    echo "Force stopping all Node.js processes..."
+    killall node 2>/dev/null && echo -e "${GREEN}✓ All Node.js processes stopped${NC}" || echo "No Node.js processes found"
+fi
 
 # Clean up port files
 echo "Cleaning up port files..."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 rm -f "$SCRIPT_DIR/.server-port"
-rm -f "$SCRIPT_DIR/.preview-port"
 echo -e "${GREEN}✓ Port files cleaned${NC}"
 
 # Show remaining processes (for debugging)
 echo ""
 echo "Checking for remaining TeaRoom-related processes..."
-remaining=$(ps aux | grep -E "(claude.*TeaRoom|claude-oneshot|node.*TeaRoom)" | grep -v grep)
+remaining=$(ps aux | grep -E "(node.*server/app.js)" | grep -v grep)
 if [ -z "$remaining" ]; then
     echo -e "${GREEN}✓ No remaining TeaRoom processes found${NC}"
 else
@@ -37,4 +37,4 @@ else
     echo "$remaining"
 fi
 
-echo -e "${GREEN}🎉 Cleanup completed!${NC}"
+echo -e "${GREEN}🎉 TeaRoom 2.0 cleanup completed!${NC}"
