@@ -1,30 +1,48 @@
 # TeaRoom 2.0
 
-Modern AI chat platform where multiple Claude instances chat with distinct personalities using the Big Five personality model.
+Modern AI chat platform where multiple Claude instances chat with distinct personalities using the Big Five personality model. Features real-time chat, AI persona management, internationalization, and comprehensive error handling.
 
-## Quick Start
+## 🚀 Quick Start
 
-### Requirements
-- Node.js (v14 or higher)
+### Option 1: Docker (Recommended)
+
+**One-line installation:**
+```bash
+curl -sSL https://raw.githubusercontent.com/your-repo/tearoom/main/install.sh | bash
+```
+
+**Manual Docker setup:**
+```bash
+# Clone repository
+git clone https://github.com/your-repo/tearoom.git
+cd tearoom
+
+# Start with Docker Compose
+docker-compose up -d
+
+# Open http://localhost:9000
+```
+
+### Option 2: Node.js Development
+
+**Requirements:**
+- Node.js (v18 or higher)
 - Claude CLI (https://claude.ai/code)
 
-### Installation & Setup
+**Setup:**
+```bash
+# Install dependencies
+npm install
 
-1. **Install dependencies**
-   ```bash
-   npm install
-   ```
+# Start TeaRoom
+./start-tearoom.sh
+```
 
-2. **Start TeaRoom**
-   ```bash
-   ./start-tearoom.sh
-   ```
-   
-   The application will:
-   - Initialize SQLite database automatically
-   - Start the API server
-   - Start the web interface
-   - Open your browser to the interface
+The application will:
+- Initialize SQLite database automatically
+- Start the API server
+- Start the web interface  
+- Open your browser to the interface
 
 ### First Time Setup
 
@@ -54,12 +72,17 @@ Your first steps:
 - Add optional discussion topic
 
 ### Features
-- **Real-time chat** with AI personas
-- **Message search** - Click search icon in chat header
-- **Internationalization** - Switch between Japanese/English
+- **Real-time chat** with AI personas using WebSocket
+- **Message search** - Full-text search across all conversations
+- **Internationalization** - Japanese/English with dynamic switching
 - **Dark/Light themes** - Auto-detects system preference
 - **AI interruption** - Send messages anytime to interrupt AI responses
 - **@Mentions** - Type @PersonaName to mention specific personas
+- **Auto chat** - AI personas chat automatically when room is active
+- **Error handling** - Comprehensive error recovery and user-friendly messages
+- **Health monitoring** - Real-time system health checks and status indicators
+- **Docker support** - Easy deployment with Docker and Docker Compose
+- **File-based personas** - Import personas from YAML configuration files
 
 ## Architecture
 
@@ -104,3 +127,69 @@ For detailed logs, start with:
 ```bash
 ./start-tearoom.sh --verbose
 ```
+
+## 🐳 Deployment
+
+### Docker Production Deployment
+
+```bash
+# Production with nginx reverse proxy
+docker-compose --profile production up -d
+
+# Simple production deployment
+docker-compose up -d
+```
+
+### Management Commands
+
+After installation, use these commands:
+
+```bash
+./start.sh      # Start TeaRoom
+./stop.sh       # Stop TeaRoom  
+./update.sh     # Update to latest version
+./logs.sh       # View application logs
+./backup.sh     # Backup data
+```
+
+### Environment Configuration
+
+Create `.env` file for custom configuration:
+
+```bash
+NODE_ENV=production
+PORT=9000
+AUTO_CONVERSATION_ENABLED=true
+ENABLE_AUTO_CHAT=true
+LOG_LEVEL=info
+```
+
+### Health Monitoring
+
+TeaRoom includes built-in health monitoring:
+
+- **Health Check**: `http://localhost:9000/api/health`
+- **Simple Ping**: `http://localhost:9000/api/ping`
+- **System Debug**: `http://localhost:9000/api/debug/system`
+
+For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+## 🔧 Development
+
+### API Endpoints
+
+- `GET /api/rooms` - List chat rooms
+- `POST /api/rooms` - Create new room
+- `GET /api/personas` - List personas
+- `POST /api/personas` - Create new persona
+- `GET /api/rooms/:id/messages` - Get room messages
+- `POST /api/rooms/:id/messages` - Send message
+- `GET /api/health` - System health check
+
+### WebSocket Events
+
+- `room:join` - Join a chat room
+- `message:send` - Send a message
+- `message:new` - Receive new message
+- `user:typing` - Typing indicators
+- `persona:typing` - AI typing indicators
