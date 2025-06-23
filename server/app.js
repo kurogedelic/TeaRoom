@@ -12,6 +12,7 @@ const database = require('./database/database');
 // Services
 const claudeSDK = require('./services/claude-sdk');
 const healthCheck = require('./services/health-check');
+const performanceOptimizer = require('./services/performance-optimizer');
 
 // Data paths
 const dataPaths = require('./utils/data-paths');
@@ -72,6 +73,7 @@ const upload = multer({
 app.use('/api/rooms', roomsRouter);
 app.use('/api/personas', personasRouter);
 app.use('/api/rooms', messagesRouter); // /api/rooms/:roomId/messages
+app.use('/api/ai-insights', require('./routes/ai-insights'));
 
 // Settings API
 app.get('/api/settings', async (req, res) => {
@@ -520,6 +522,11 @@ async function startServer() {
     
     server.listen(port, () => {
       console.log(`TeaRoom 2.0 server running at: http://localhost:${port}`);
+      
+      // Start performance monitoring
+      performanceOptimizer.startMonitoring();
+      console.log('🚀 Performance optimization enabled');
+      
       console.log('API Endpoints:');
       console.log('  GET  /api/rooms - List rooms');
       console.log('  POST /api/rooms - Create room');
@@ -530,6 +537,7 @@ async function startServer() {
       console.log('  GET  /api/health - Health check');
       console.log('  GET  /api/test-claude - Test Claude CLI');
       console.log('  GET  /api/debug/system - System debug info');
+      console.log('  GET  /api/ai-insights/* - AI memory and learning insights');
       
       // Write port to file for other components
       fs.writeFileSync('.server-port', port.toString());

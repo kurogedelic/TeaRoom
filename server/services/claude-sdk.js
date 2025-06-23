@@ -2,6 +2,8 @@ const { execSync } = require('child_process');
 const conversationDynamics = require('./conversation-dynamics');
 const intelligentResponses = require('./intelligent-responses');
 const enhancedI18n = require('./enhanced-i18n');
+const aiMemory = require('./ai-memory');
+const personaLearning = require('./persona-learning');
 
 class ClaudeSDKService {
   constructor() {
@@ -120,6 +122,19 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
       const personaId = persona.id;
       const roomId = currentMessage.roomId || currentMessage.room_id;
       
+      // Initialize AI memory for this persona
+      await aiMemory.initializePersonaMemory(persona);
+      
+      // Process current message for memory storage
+      const conversationContext = {
+        roomId: roomId,
+        topic: roomTopic,
+        participants: await this.getRoomPersonas(roomId),
+        isNewTopic: false // This could be determined by topic analysis
+      };
+      
+      await aiMemory.processConversationMemory(personaId, currentMessage, conversationContext);
+      
       // Ensure persona process exists
       await this.createPersonaProcess(persona, roomTopic, language);
       
@@ -181,7 +196,7 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
       }
       
       // Fallback to Claude CLI with enhanced context
-      const systemPrompt = this.generateEnhancedSystemPrompt(persona, roomTopic, conversationState, language);
+      const systemPrompt = await this.generateEnhancedSystemPrompt(persona, roomTopic, conversationState, language);
       
       // Format conversation history with better context
       const conversationHistory = this.formatConversationHistory(messages, conversationState);
@@ -260,12 +275,21 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
   }
 
   /**
-   * Generate enhanced system prompt with conversation context
+   * Generate enhanced system prompt with conversation context and memory
    */
-  generateEnhancedSystemPrompt(persona, topic, conversationState, language) {
+  async generateEnhancedSystemPrompt(persona, topic, conversationState, language) {
     const basePrompt = this.generateSystemPrompt(persona, topic, language);
     
+    // Retrieve relevant memories for context
+    const memoryContext = await aiMemory.generateMemoryContext(
+      persona.id, 
+      topic, 
+      conversationState.participants || []
+    );
+    
     const contextEnhancement = language === 'ja' ? `
+
+${memoryContext || ''}
 
 【現在の会話状況】
 - 会話の段階: ${conversationState.phase}
@@ -278,7 +302,10 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
 - エンゲージメントが低い場合は積極的に会話を盛り上げてください
 - 会話が冷めている場合は新しい話題を提供してください
 - 相手の感情状態に共感し、適切に反応してください
+- 記憶からの背景情報がある場合は自然に活用してください
     ` : `
+
+${memoryContext || ''}
 
 【Current Conversation Context】
 - Phase: ${conversationState.phase}
@@ -291,6 +318,7 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
 - If engagement is low, actively help energize the conversation
 - If conversation is cooling, provide new topics
 - Empathize with others' emotional states and respond appropriately
+- Use memory context naturally when relevant
     `;
     
     return basePrompt + contextEnhancement;
@@ -1066,6 +1094,23 @@ As ${persona.name}, understand the current conversation context and atmosphere, 
       }
 
       if (response.success) {
+        // Initialize persona learning system
+        await personaLearning.initializePersonaLearning(persona);
+        
+        // Process learning from this interaction
+        const interaction = {
+          message: { content: response.content },
+          context: {
+            roomId: roomId,
+            topic: room.topic,
+            participants: await this.getRoomPersonas(roomId),
+            engagement: response.conversationMetrics?.engagement || 0.5,
+            responseType: response.responseType
+          }
+        };
+        
+        await personaLearning.processLearningFromInteraction(persona.id, interaction);
+        
         // Save persona response to database
         const result = await database.run(`
           INSERT INTO messages (room_id, sender_id, sender_type, sender_name, content)
@@ -1341,7 +1386,7 @@ As ${persona.name}, understand the current conversation context and atmosphere, 
         console.warn(`⚠️ Intelligent auto-response failed, using Claude CLI fallback:`, intelligentError.message);
         
         // Fallback to enhanced Claude CLI
-        const systemPrompt = this.generateEnhancedSystemPrompt(optimalPersona, room.topic, conversationState, room.language || 'ja');
+        const systemPrompt = await this.generateEnhancedSystemPrompt(optimalPersona, room.topic, conversationState, room.language || 'ja');
         const userPrompt = this.buildAutoConversationPrompt(conversationState, room.language || 'ja');
         
         response = await this.callClaudeCLI(userPrompt, systemPrompt);
