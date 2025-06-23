@@ -1,6 +1,7 @@
 const { execSync } = require('child_process');
 const conversationDynamics = require('./conversation-dynamics');
 const intelligentResponses = require('./intelligent-responses');
+const enhancedI18n = require('./enhanced-i18n');
 
 class ClaudeSDKService {
   constructor() {
@@ -146,9 +147,25 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
         if (intelligentResponse && intelligentResponse.length > 10) {
           console.log(`🎯 Intelligent response generated for ${persona.name}: ${intelligentResponse.substring(0, 100)}...`);
           
+          // Apply cultural adaptation to intelligent response
+          const culturalContext = {
+            isTopicChange: conversationState.needsIntervention?.reason === 'surface_conversation',
+            addEmotional: conversationState.context?.emotional === 'positive',
+            emotionalIntensity: conversationState.momentum,
+            needsInclusion: conversationState.needsIntervention?.reason === 'unbalanced_participation',
+            needsEnergyBoost: conversationState.phase === 'cooling'
+          };
+          
+          const adaptedResponse = enhancedI18n.applyCulturalAdaptation(
+            intelligentResponse.trim(),
+            language,
+            culturalContext,
+            persona
+          );
+          
           return {
             success: true,
-            content: intelligentResponse.trim(),
+            content: adaptedResponse,
             persona_id: persona.id,
             persona_name: persona.name,
             responseType: 'intelligent',
@@ -185,9 +202,25 @@ ${persona.custom_prompt ? `【Custom Instructions】\n${persona.custom_prompt}\n
 
       console.log(`✅ Response generated for ${persona.name}: ${response.substring(0, 100)}...`);
       
+      // Apply cultural adaptation to Claude CLI response
+      const culturalContext = {
+        isTopicChange: conversationState.needsIntervention?.reason === 'surface_conversation',
+        addEmotional: conversationState.context?.emotional === 'positive',
+        emotionalIntensity: conversationState.momentum,
+        needsInclusion: conversationState.needsIntervention?.reason === 'unbalanced_participation',
+        needsEnergyBoost: conversationState.phase === 'cooling'
+      };
+      
+      const adaptedResponse = enhancedI18n.applyCulturalAdaptation(
+        response.trim(),
+        language,
+        culturalContext,
+        persona
+      );
+      
       return {
         success: true,
-        content: response.trim(),
+        content: adaptedResponse,
         persona_id: persona.id,
         persona_name: persona.name,
         responseType: 'claude_cli',
@@ -1384,4 +1417,6 @@ As ${persona.name}, understand the current conversation context and atmosphere, 
   }
 }
 
+// Export both the class and a singleton instance
 module.exports = new ClaudeSDKService();
+module.exports.ClaudeSDKService = ClaudeSDKService;
