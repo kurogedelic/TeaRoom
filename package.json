@@ -1,17 +1,21 @@
 {
   "name": "tearoom",
-  "version": "0.0.1",
-  "description": "AI conversation platform with personality-driven Claude instances",
+  "version": "1.0.0",
+  "description": "Advanced conversational AI platform where multiple Claude instances chat with distinct personalities",
   "main": "server/app.js",
   "scripts": {
     "start": "./start-tearoom.sh",
     "server": "node server/app.js",
     "dev": "nodemon server/app.js",
+    "personas": "./manage-personas.sh",
+    "cleanup": "./cleanup-tearoom.sh",
+    "verbose": "./start-tearoom.sh --verbose",
     "db:init": "node -e \"require('./server/database/database').initialize().then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\"",
     "db:seed": "node -e \"const db = require('./server/database/database'); const seeders = require('./server/database/seeders'); db.initialize().then(() => seeders.seedDevelopmentData()).then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\"",
     "db:clear": "node -e \"const db = require('./server/database/database'); const seeders = require('./server/database/seeders'); db.initialize().then(() => seeders.clearAllData()).then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\"",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "repository": {
     "type": "git",

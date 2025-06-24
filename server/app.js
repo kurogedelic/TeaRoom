@@ -13,6 +13,7 @@ const database = require('./database/database');
 const claudeSDK = require('./services/claude-sdk');
 const healthCheck = require('./services/health-check');
 const performanceOptimizer = require('./services/performance-optimizer');
+const VoiceWebSocketHandler = require('./services/voice-websocket');
 
 // Data paths
 const dataPaths = require('./utils/data-paths');
@@ -274,6 +275,15 @@ app.get('*', (req, res) => {
   const indexPath = path.join(__dirname, '../public/index.html');
   res.sendFile(indexPath);
 });
+
+// Initialize Voice WebSocket Handler
+let voiceHandler;
+try {
+  voiceHandler = new VoiceWebSocketHandler(io);
+  console.log('✅ Voice WebSocket handler initialized');
+} catch (error) {
+  console.error('❌ Failed to initialize voice handler:', error);
+}
 
 // WebSocket event handlers
 const activeRooms = new Map(); // roomId -> Set of socket IDs

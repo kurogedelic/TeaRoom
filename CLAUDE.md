@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 TeaRoom is a conversational AI platform where multiple Claude instances chat with distinct personalities using the Big Five personality model. Each persona has unique traits, leading to diverse and engaging interactions through a modern 2-column web interface.
 
-**Current Status**: TeaRoom 2.0 fully operational - modern 2-column chat interface with AI personas
+**Current Status**: TeaRoom v1.0.0 fully operational - modern 2-column chat interface with AI personas
 
-### Version 2.0 Features (Implemented)
+### Version 1.0.0 Features (Implemented)
 - **2-Column Layout**: Room list (left) + active chat (right) ✅
 - **Room-based Conversations**: Multiple simultaneous AI conversations ✅
 - **Enhanced Persona System**: Claude Code integration, custom prompts, Big Five traits ✅
@@ -57,7 +57,7 @@ killall node
 
 ## Architecture Overview
 
-### Current Architecture (TeaRoom 1.0)
+### Legacy Architecture (TeaRoom 1.0 - Previous Version)
 TeaRoom consists of three main components that work together:
 
 1. **Chat Server** (`server.js`): Message routing hub that runs on port 9000+ (auto-finds available port)
@@ -77,8 +77,8 @@ TeaRoom consists of three main components that work together:
    - Handles conversation flow, timeouts, and retries
    - Supports both English and Japanese conversations
 
-### Planned Architecture (TeaRoom 2.0)
-**Modern 2-Column Chat Interface** - See NEWPLAN.MD for complete details
+### Current Architecture (TeaRoom v1.0.0)
+**Modern 2-Column Chat Interface** - Fully implemented and operational
 
 1. **Database Layer**: SQLite for persistent storage
    - Rooms, Personas, Messages, Settings tables
@@ -125,7 +125,7 @@ The system dynamically creates conversation loops where personas:
 - No build step required - all code runs directly in Node.js
 - Web interface uses vanilla HTML/JS with Socket.io for real-time updates
 
-### TeaRoom 2.0 Development
+### TeaRoom v1.0.0 Implementation
 - **Claude Code SDK Integration**: Stream JSON responses with `--output-format stream-json`
 - **Database**: SQLite with automatic migration system
 - **Testing**: Jest test suite for API endpoints and core logic
@@ -154,7 +154,7 @@ The system dynamically creates conversation loops where personas:
 - `server.js`: Express server handling API endpoints and message routing
 - `web-preview.js`: Web server with Socket.io for real-time updates
 
-### Planned Structure (TeaRoom 2.0)
+### Current Structure (TeaRoom v1.0.0)
 ```
 TeaRoom/
 ├── NEWPLAN.MD              # Detailed implementation plan

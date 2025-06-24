@@ -1,195 +1,349 @@
-# TeaRoom 2.0
+# TeaRoom 🍵
 
-Modern AI chat platform where multiple Claude instances chat with distinct personalities using the Big Five personality model. Features real-time chat, AI persona management, internationalization, and comprehensive error handling.
+**An advanced conversational AI platform where multiple Claude instances chat with distinct personalities**
+
+TeaRoom creates engaging multi-persona AI conversations using the Big Five personality model. Each AI persona has unique traits and communication styles, leading to diverse and dynamic interactions through a modern, intuitive interface.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
+[![Claude](https://img.shields.io/badge/Claude-Sonnet-blue.svg)](https://claude.ai/)
+[![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen.svg)](https://github.com/yourusername/TeaRoom/releases)
+
+## ✨ Features
+
+### 🎭 **Multi-Persona AI System**
+- **Big Five Personality Model**: Each persona has unique traits across Extraversion, Agreeableness, Conscientiousness, Neuroticism, and Openness
+- **Dynamic Personalities**: AI personas evolve and adapt based on conversation history
+- **Custom Avatars**: Support for both emoji and image avatars
+- **Persona Learning**: Advanced memory and learning systems that help personas grow over time
+
+### 💬 **Modern Chat Interface**
+- **2-Column Layout**: Room management (left) + active chat (right)
+- **Real-time Messaging**: Instant message delivery with typing indicators
+- **@Mentions**: Autocomplete mentions with avatar previews
+- **Room-based Conversations**: Multiple simultaneous AI discussions
+
+### 🧠 **Advanced AI Features**
+- **AI Memory System**: Short, medium, and long-term memory for context retention
+- **Learning & Adaptation**: Personas learn from interactions and develop preferences
+- **Auto-Chat**: AI personas automatically continue conversations when idle
+- **Cultural Context**: Language-aware responses with cultural adaptation
+
+### 🎤 **Voice Integration**
+- **Speech Recognition**: Convert speech to text in multiple languages
+- **Voice Synthesis**: AI personas can speak responses with distinct voices
+- **Voice Commands**: Control the interface with voice commands
+- **Real-time Audio**: Live voice activity indicators and feedback
+
+### 🌐 **Multilingual Support**
+- **Japanese/English**: Full interface and AI conversation support
+- **Cultural Adaptation**: Responses adapted to cultural context and politeness levels
+- **Dynamic Language Switching**: Change languages on the fly
+
+### 🔧 **Developer Features**
+- **SQLite Database**: Persistent storage for conversations and personas
+- **RESTful API**: Complete API for room and persona management
+- **WebSocket Support**: Real-time communication and events
+- **Docker Ready**: Containerization support for easy deployment
+- **Performance Monitoring**: Built-in performance optimization and monitoring
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (Recommended)
+### Prerequisites
 
-**One-line installation:**
-```bash
-curl -sSL https://raw.githubusercontent.com/your-repo/tearoom/main/install.sh | bash
-```
+- **Node.js 18+** - [Download here](https://nodejs.org/)
+- **Claude CLI** - [Install Claude Code](https://claude.ai/code)
+- **macOS/Linux** - For voice features (uses system TTS)
 
-**Manual Docker setup:**
-```bash
-# Clone repository
-git clone https://github.com/your-repo/tearoom.git
-cd tearoom
+### Installation
 
-# Start with Docker Compose
-docker-compose up -d
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/TeaRoom.git
+   cd TeaRoom
+   ```
 
-# Open http://localhost:9000
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### Option 2: Node.js Development
+3. **Start TeaRoom**
+   ```bash
+   ./start-tearoom.sh
+   ```
 
-**Requirements:**
-- Node.js (v18 or higher)
-- Claude CLI (https://claude.ai/code)
+4. **Open your browser**
+   ```
+   http://localhost:9010
+   ```
 
-**Setup:**
-```bash
-# Install dependencies
-npm install
-
-# Start TeaRoom
-./start-tearoom.sh
-```
-
-The application will:
-- Initialize SQLite database automatically
-- Start the API server
-- Start the web interface  
-- Open your browser to the interface
+That's it! 🎉
 
 ### First Time Setup
 
-When you first run TeaRoom, it will automatically:
-- Create the SQLite database (`tearoom.db`)
-- Initialize database tables
-- Create necessary directories
-- Generate default settings
+1. **Create Personas**: Click "Create Persona" to add AI personalities
+2. **Create a Room**: Click "Create Room" and add 2+ personas
+3. **Start Chatting**: Select your room and begin the conversation!
 
-Your first steps:
-1. Create 2 personas (minimum required for conversation)
-2. Create a room and assign both personas
-3. Start chatting!
-
-## Usage
+## 📖 Usage Guide
 
 ### Creating Personas
-- Click "Create Persona" in the sidebar
-- Set personality traits using Big Five model sliders
-- Choose an emoji or upload an avatar
-- Optional: Add custom prompts for behavior
 
-### Creating Rooms
-- Click "Create Room" in the sidebar
-- Select exactly 2 personas for the conversation
-- Set language preference (Japanese/English)
-- Add optional discussion topic
+```bash
+# Interactive persona management
+./manage-personas.sh
 
-### Features
-- **Real-time chat** with AI personas using WebSocket
-- **Message search** - Full-text search across all conversations
-- **Internationalization** - Japanese/English with dynamic switching
-- **Dark/Light themes** - Auto-detects system preference
-- **AI interruption** - Send messages anytime to interrupt AI responses
-- **@Mentions** - Type @PersonaName to mention specific personas
-- **Auto chat** - AI personas chat automatically when room is active
-- **Error handling** - Comprehensive error recovery and user-friendly messages
-- **Health monitoring** - Real-time system health checks and status indicators
-- **Docker support** - Easy deployment with Docker and Docker Compose
-- **File-based personas** - Import personas from YAML configuration files
+# Or use the web interface
+# Click "Create Persona" → Fill details → Save
+```
 
-## Architecture
+**Persona Configuration:**
+- **Name**: Unique identifier for the persona
+- **Avatar**: Emoji or upload custom image
+- **Personality Traits**: Big Five model scores (1-5)
+- **Communication Style**: Formal, casual, technical, etc.
+- **Language Preference**: Primary language for responses
 
-- **Backend**: Node.js + Express + Socket.io
-- **Database**: SQLite with automatic migrations
-- **Frontend**: Vanilla JavaScript with modern CSS
-- **AI**: Claude CLI integration with streaming responses
+### Managing Rooms
 
-## File Structure
+- **Create Room**: Add multiple personas for group conversations
+- **Room Settings**: Configure auto-chat intervals and behavior
+- **Message History**: Persistent conversation storage
+- **Export Conversations**: Download chat history
+
+### Voice Features
+
+- **Start Listening**: Click 🎤 or press `Ctrl+Shift+V`
+- **Voice Commands**: 
+  - "Send message" / "メッセージを送信"
+  - "Create room" / "新しいルーム"
+  - "Stop speaking" / "読み上げ停止"
+- **AI Speech**: Enable in settings for persona voice responses
+
+### Advanced Features
+
+#### AI Memory System
+```javascript
+// Personas remember:
+// - Short-term: Last few messages
+// - Medium-term: Session highlights
+// - Long-term: Important relationships and preferences
+```
+
+#### Performance Monitoring
+```bash
+# Access system insights
+curl http://localhost:9010/api/ai-insights/memory/[personaId]
+curl http://localhost:9010/api/ai-insights/learning/[personaId]
+```
+
+## 🛠 Development
+
+### Project Structure
 
 ```
 TeaRoom/
-├── start-tearoom.sh       # Main startup script
-├── tearoom.db            # SQLite database (auto-created)
 ├── server/
-│   ├── app.js            # Express application
-│   ├── database/         # Database layer
-│   ├── routes/           # API endpoints
-│   └── services/         # Claude integration
-└── public/
-    ├── index.html        # Main interface
-    ├── css/              # Styles and themes  
-    ├── js/               # Frontend application
-    └── locales/          # i18n translations
+│   ├── app.js              # Main Express application
+│   ├── database/           # SQLite schema and migrations
+│   ├── routes/             # API endpoints
+│   └── services/           # Core services (AI, voice, etc.)
+├── public/
+│   ├── index.html          # Main interface
+│   ├── css/               # Styling and themes
+│   ├── js/                # Frontend logic
+│   └── locales/           # Internationalization
+├── instances/             # Persona configuration files
+└── start-tearoom.sh      # Launch script
 ```
 
-## Stopping TeaRoom
-
-Press `Ctrl+C` in the terminal where you started TeaRoom, or run:
-```bash
-killall node
-```
-
-## Troubleshooting
-
-- **Port conflicts**: TeaRoom auto-finds available ports
-- **Database issues**: Delete `tearoom.db` to reset
-- **Claude CLI errors**: Ensure Claude CLI is installed and authenticated
-- **Permission errors**: Check file permissions on project directory
-
-For detailed logs, start with:
-```bash
-./start-tearoom.sh --verbose
-```
-
-## 🐳 Deployment
-
-### Docker Production Deployment
+### API Endpoints
 
 ```bash
-# Production with nginx reverse proxy
-docker-compose --profile production up -d
+# Rooms
+GET    /api/rooms          # List all rooms
+POST   /api/rooms          # Create new room
+GET    /api/rooms/:id      # Get room details
 
-# Simple production deployment
-docker-compose up -d
-```
+# Personas
+GET    /api/personas       # List all personas
+POST   /api/personas       # Create new persona
+PUT    /api/personas/:id   # Update persona
 
-### Management Commands
+# Messages
+GET    /api/rooms/:id/messages  # Get room messages
+POST   /api/rooms/:id/messages  # Send message
 
-After installation, use these commands:
-
-```bash
-./start.sh      # Start TeaRoom
-./stop.sh       # Stop TeaRoom  
-./update.sh     # Update to latest version
-./logs.sh       # View application logs
-./backup.sh     # Backup data
+# AI Insights
+GET    /api/ai-insights/memory/:personaId    # Memory analysis
+GET    /api/ai-insights/learning/:personaId  # Learning metrics
 ```
 
 ### Environment Configuration
 
-Create `.env` file for custom configuration:
+Create a `.env` file:
 
 ```bash
-NODE_ENV=production
-PORT=9000
-AUTO_CONVERSATION_ENABLED=true
-ENABLE_AUTO_CHAT=true
-LOG_LEVEL=info
+# Optional environment variables
+NODE_ENV=development
+PORT=9010
+VERBOSE=false
+
+# Database location (auto-configured)
+# DATA_DIR=/custom/data/path
 ```
 
-### Health Monitoring
+### Running Tests
 
-TeaRoom includes built-in health monitoring:
+```bash
+npm test                 # Run Jest test suite
+npm run test:watch      # Watch mode for development
+npm run test:coverage   # Generate coverage report
+```
 
-- **Health Check**: `http://localhost:9000/api/health`
-- **Simple Ping**: `http://localhost:9000/api/ping`
-- **System Debug**: `http://localhost:9000/api/debug/system`
+### Docker Deployment
 
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+```bash
+# Build and run with Docker
+docker build -t tearoom .
+docker run -p 9010:9010 tearoom
 
-## 🔧 Development
+# Or use Docker Compose
+docker-compose up
+```
 
-### API Endpoints
+## 🎯 Commands Reference
 
-- `GET /api/rooms` - List chat rooms
-- `POST /api/rooms` - Create new room
-- `GET /api/personas` - List personas
-- `POST /api/personas` - Create new persona
-- `GET /api/rooms/:id/messages` - Get room messages
-- `POST /api/rooms/:id/messages` - Send message
-- `GET /api/health` - System health check
+### Essential Commands
 
-### WebSocket Events
+```bash
+# Start TeaRoom
+./start-tearoom.sh
 
-- `room:join` - Join a chat room
-- `message:send` - Send a message
-- `message:new` - Receive new message
-- `user:typing` - Typing indicators
-- `persona:typing` - AI typing indicators
+# Start with verbose logging
+./start-tearoom.sh --verbose
+
+# Manage personas interactively
+./manage-personas.sh
+
+# Stop all TeaRoom processes
+./cleanup-tearoom.sh
+```
+
+### NPM Scripts
+
+```bash
+npm start              # Start TeaRoom
+npm run server         # Server only
+npm run web           # Web interface only
+npm run personas      # Persona management
+npm test              # Run tests
+npm run lint          # Code linting
+```
+
+### Health Checks
+
+```bash
+# Check system status
+curl http://localhost:9010/api/health
+
+# System debug information
+curl http://localhost:9010/api/debug/system
+
+# Performance metrics
+curl http://localhost:9010/api/ai-insights/performance
+```
+
+## 🔧 Configuration
+
+### Persona Personality Traits
+
+The Big Five model scores (1-5 scale):
+
+- **Openness**: Creativity, curiosity, openness to experience
+- **Conscientiousness**: Organization, dependability, discipline
+- **Extraversion**: Sociability, assertiveness, emotional expressiveness
+- **Agreeableness**: Cooperation, trustworthiness, empathy
+- **Neuroticism**: Emotional instability, anxiety, moodiness
+
+### Voice Configuration
+
+```javascript
+// Voice profiles are automatically configured based on:
+// - Persona gender and personality
+// - Language preference (ja-JP, en-US)
+// - Speech rate and pitch preferences
+```
+
+### Auto-Chat Settings
+
+- **Interval**: 30-300 seconds between AI messages
+- **Silence Threshold**: Time before AI breaks silence
+- **Response Probability**: Likelihood of persona responding
+- **Learning Rate**: How quickly personas adapt
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our contributing guidelines:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Commit changes**: `git commit -m 'Add amazing feature'`
+4. **Push to branch**: `git push origin feature/amazing-feature`
+5. **Open a Pull Request**
+
+### Development Setup
+
+```bash
+# Clone your fork
+git clone https://github.com/yourusername/TeaRoom.git
+cd TeaRoom
+
+# Install dependencies
+npm install
+
+# Start development server
+./start-tearoom.sh --verbose
+
+# Run tests
+npm test
+```
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Claude AI** - Anthropic's Claude powers the conversational AI
+- **Socket.io** - Real-time communication
+- **Express.js** - Web application framework
+- **SQLite** - Lightweight database solution
+- **Web Speech API** - Browser voice recognition
+
+## 📚 Documentation
+
+### Additional Resources
+
+- **Architecture Guide**: See `CLAUDE.md` for detailed technical documentation
+- **API Documentation**: Complete endpoint reference
+- **Persona Development**: Guide to creating effective AI personalities
+- **Voice Integration**: Speech recognition and synthesis setup
+
+### Version History
+
+- **v1.0.0** - Initial release with full feature set
+  - Multi-persona AI conversations
+  - Voice recognition and synthesis
+  - Advanced memory and learning systems
+  - Multilingual support (Japanese/English)
+  - Modern 2-column interface
+  - Real-time chat with @mentions
+  - Performance monitoring and optimization
+
+---
+
+**Made with 🍵 and ❤️**
+
+*TeaRoom creates meaningful conversations between AI personas, each with unique personalities and the ability to learn and grow through interactions.*

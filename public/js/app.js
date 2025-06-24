@@ -14,6 +14,7 @@ class TeaRoomApp {
     this.autoChatInterval = null;
     this.personaAvatarMap = new Map(); // Cache for persona avatars
     this.avatarCache = new Map(); // File-based avatar cache
+    this.voiceControl = null; // Voice control instance
     
     this.init();
   }
@@ -45,6 +46,9 @@ class TeaRoomApp {
     
     // Setup typing indicator cleanup
     this.setupTypingCleanup();
+    
+    // Initialize voice control
+    this.initVoiceControl();
     
     console.log('✅ TeaRoom 2.0 ready!');
     
@@ -752,10 +756,19 @@ class TeaRoomApp {
       
       // Find persona details
       const persona = this.personas.find(p => p.name === name);
-      const avatar = persona?.avatar_value || '👤';
+      
+      // Generate proper avatar HTML
+      let avatarHtml = '👤'; // Default
+      if (persona) {
+        if (persona.avatar_type === 'image' && persona.avatar_value) {
+          avatarHtml = `<img src="/uploads/${persona.avatar_value}" alt="${persona.name}" class="mention-avatar-image">`;
+        } else {
+          avatarHtml = persona.avatar_value || '👤';
+        }
+      }
       
       item.innerHTML = `
-        <span class="mention-avatar">${avatar}</span>
+        <span class="mention-avatar">${avatarHtml}</span>
         <span class="mention-name">${name}</span>
       `;
       
@@ -1033,13 +1046,15 @@ class TeaRoomApp {
         '<mark style="background: yellow; padding: 0 2px;">$1</mark>'
       );
       
-      const avatar = message.avatar_value || (message.sender_type === 'user' ? '👤' : '🤖');
+      // Use proper avatar rendering for search results
+      const avatarValue = message.avatar_value || (message.sender_type === 'user' ? '👤' : '🤖');
+      const avatarHTML = this.renderAvatarHTML(avatarValue);
       const time = new Date(message.timestamp).toLocaleString();
       
       return `
         <div class="search-result-item" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer;" data-message-id="${message.id}">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-            <span style="font-size: 16px;">${avatar}</span>
+            <span style="font-size: 16px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">${avatarHTML}</span>
             <strong>${message.sender_name}</strong>
             <span style="font-size: 12px; color: var(--text-muted);">${time}</span>
           </div>
@@ -1608,6 +1623,20 @@ class TeaRoomApp {
       }
     } catch (error) {
       console.error('Failed to sync persona files:', error);
+    }
+  }
+
+  // Initialize voice control
+  initVoiceControl() {
+    try {
+      if (window.VoiceControl) {
+        this.voiceControl = new VoiceControl(this);
+        console.log('🎤 Voice control initialized');
+      } else {
+        console.warn('⚠️ VoiceControl class not available');
+      }
+    } catch (error) {
+      console.error('❌ Failed to initialize voice control:', error);
     }
   }
 
