@@ -7,7 +7,7 @@ TeaRoom creates engaging multi-persona AI conversations using the Big Five perso
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
 [![Claude](https://img.shields.io/badge/Claude-Sonnet-blue.svg)](https://claude.ai/)
-[![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen.svg)](https://github.com/yourusername/TeaRoom/releases)
+[![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen.svg)](https://github.com/kurogedelic/TeaRoom/releases)
 
 ## ✨ Features
 
@@ -70,7 +70,7 @@ TeaRoom creates engaging multi-persona AI conversations using the Big Five perso
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/TeaRoom.git
+   git clone https://github.com/kurogedelic/TeaRoom.git
    cd TeaRoom
    ```
 
@@ -308,7 +308,7 @@ We welcome contributions! Please see our contributing guidelines:
 
 ```bash
 # Clone your fork
-git clone https://github.com/yourusername/TeaRoom.git
+git clone https://github.com/kurogedelic/TeaRoom.git
 cd TeaRoom
 
 # Install dependencies
@@ -407,8 +407,8 @@ rm tearoom.db
 ### Getting Help
 
 1. **Check the logs**: Start with `./start-tearoom.sh --verbose` for detailed output
-2. **Search issues**: Check existing [GitHub Issues](https://github.com/yourusername/TeaRoom/issues)
-3. **Create an issue**: If you find a bug, please [report it](https://github.com/yourusername/TeaRoom/issues/new)
+2. **Search issues**: Check existing [GitHub Issues](https://github.com/kurogedelic/TeaRoom/issues)
+3. **Create an issue**: If you find a bug, please [report it](https://github.com/kurogedelic/TeaRoom/issues/new)
 
 ### Windows Users
 
