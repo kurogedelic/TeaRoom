@@ -1,0 +1,54 @@
+{
+  "name": "tearoom",
+  "version": "1.0.0",
+  "description": "Advanced conversational AI platform where multiple Claude instances chat with distinct personalities",
+  "main": "server/app.js",
+  "scripts": {
+    "start": "./start-tearoom.sh",
+    "server": "node server/app.js",
+    "dev": "nodemon server/app.js",
+    "personas": "./manage-personas.sh",
+    "cleanup": "./cleanup-tearoom.sh",
+    "verbose": "./start-tearoom.sh --verbose",
+    "db:init": "node -e \"require('./server/database/database').initialize().then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\"",
+    "db:seed": "node -e \"const db = require('./server/database/database'); const seeders = require('./server/database/seeders'); db.initialize().then(() => seeders.seedDevelopmentData()).then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\"",
+    "db:clear": "node -e \"const db = require('./server/database/database'); const seeders = require('./server/database/seeders'); db.initialize().then(() => seeders.clearAllData()).then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); })\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/TeaRoom.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/TeaRoom/issues"
+  },
+  "homepage": "https://github.com/yourusername/TeaRoom#readme",
+  "keywords": [
+    "ai",
+    "conversation",
+    "claude",
+    "personality",
+    "big-five",
+    "claude-code"
+  ],
+  "author": "Leo Kuroshita (@kurogedelic)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "js-yaml": "^4.1.0",
+    "multer": "^2.0.1",
+    "socket.io": "^4.6.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "jest": "^30.0.2",
+    "nodemon": "^3.0.1",
+    "supertest": "^7.1.1"
+  }
+}
