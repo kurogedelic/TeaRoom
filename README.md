@@ -7,7 +7,7 @@ TeaRoom creates engaging multi-persona AI conversations using the Big Five perso
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
 [![Claude](https://img.shields.io/badge/Claude-Sonnet-blue.svg)](https://claude.ai/)
-[![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen.svg)](https://github.com/yourusername/TeaRoom/releases)
+[![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen.svg)](https://github.com/kurogedelic/TeaRoom/releases)
 
 ## ✨ Features
 
@@ -51,15 +51,26 @@ TeaRoom creates engaging multi-persona AI conversations using the Big Five perso
 
 ### Prerequisites
 
+#### Required
 - **Node.js 18+** - [Download here](https://nodejs.org/)
+  - Check if installed: `node --version`
+  - Should show v18.0.0 or higher
+
+#### For AI Features (Required)
 - **Claude CLI** - [Install Claude Code](https://claude.ai/code)
-- **macOS/Linux** - For voice features (uses system TTS)
+  - This is Anthropic's official CLI tool that powers the AI conversations
+  - Free to use with Claude account
+  - Check if installed: `claude --version`
+
+#### Optional (Enhanced Features)
+- **macOS/Linux** - For voice features (uses system text-to-speech)
+  - Windows users: Voice features not available, but all other features work perfectly
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/TeaRoom.git
+   git clone https://github.com/kurogedelic/TeaRoom.git
    cd TeaRoom
    ```
 
@@ -330,6 +341,89 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **API Documentation**: Complete endpoint reference
 - **Persona Development**: Guide to creating effective AI personalities
 - **Voice Integration**: Speech recognition and synthesis setup
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### ❌ "claude: command not found"
+**Problem**: Claude CLI is not installed or not in PATH
+**Solution**: 
+```bash
+# Install Claude CLI first
+curl -sSL https://claude.ai/install.sh | bash
+# Or follow the official installation guide at claude.ai/code
+```
+
+#### ❌ "Error: listen EADDRINUSE :::9010"
+**Problem**: Port 9010 is already in use
+**Solution**: TeaRoom automatically finds available ports. If this error persists:
+```bash
+# Stop any existing TeaRoom processes
+./cleanup-tearoom.sh
+# Or manually kill processes
+killall node
+```
+
+#### ❌ "Error: Cannot find module 'sqlite3'"
+**Problem**: Dependencies not installed properly
+**Solution**:
+```bash
+# Remove and reinstall dependencies
+rm -rf node_modules package-lock.json
+npm install
+```
+
+#### ❌ "Permission denied: ./start-tearoom.sh"
+**Problem**: Script doesn't have execute permissions
+**Solution**:
+```bash
+chmod +x start-tearoom.sh
+chmod +x cleanup-tearoom.sh
+chmod +x manage-personas.sh
+```
+
+#### ❌ AI personas don't respond
+**Problem**: Claude CLI not authenticated or not working
+**Solution**:
+```bash
+# Test Claude CLI directly
+claude --version
+claude "Hello, can you respond?"
+
+# If that doesn't work, reinstall Claude CLI
+```
+
+#### ❌ "Cannot connect to database"
+**Problem**: Database permissions or corruption
+**Solution**:
+```bash
+# Reset database (WARNING: deletes all data)
+rm tearoom.db
+# Restart TeaRoom - database will be recreated
+./start-tearoom.sh
+```
+
+### Getting Help
+
+1. **Check the logs**: Start with `./start-tearoom.sh --verbose` for detailed output
+2. **Search issues**: Check existing [GitHub Issues](https://github.com/yourusername/TeaRoom/issues)
+3. **Create an issue**: If you find a bug, please [report it](https://github.com/yourusername/TeaRoom/issues/new)
+
+### Windows Users
+
+TeaRoom is primarily tested on macOS/Linux. Windows users may encounter:
+- Shell script compatibility issues
+- Voice feature limitations
+- Path-related problems
+
+**Windows Workaround**:
+```bash
+# Use npm scripts instead of shell scripts
+npm start          # Instead of ./start-tearoom.sh
+npm run server     # Direct server start
+npm test           # Run tests
+```
 
 ### Version History
 

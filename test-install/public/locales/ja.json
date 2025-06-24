@@ -1,0 +1,260 @@
+{
+  "app": {
+    "title": "TeaRoom",
+    "subtitle": "AI チャットプラットフォーム",
+    "welcome": "TeaRoomへようこそ",
+    "description": "AIペルソナとの自然な会話をお楽しみください"
+  },
+  "room": {
+    "create": "ルーム作成",
+    "edit": "ルーム編集",
+    "name": "ルーム名",
+    "topic": "議題",
+    "language": "言語",
+    "select_personas": "ペルソナ選択（2つ選んでください）",
+    "no_rooms": "ルームがありません",
+    "create_first": "最初のルームを作成してチャットを始めましょう",
+    "active_rooms": "アクティブなルーム",
+    "recent_activity": "最近のアクティビティ",
+    "participants": "参加者",
+    "created_at": "作成日時",
+    "last_message": "最後のメッセージ",
+    "enter_room": "ルームに入る",
+    "leave_room": "ルームを退出",
+    "room_settings": "ルーム設定",
+    "auto_conversation": "自動会話",
+    "conversation_style": "会話スタイル",
+    "formal": "丁寧",
+    "casual": "カジュアル",
+    "balanced": "バランス"
+  },
+  "persona": {
+    "create": "ペルソナ作成",
+    "edit": "ペルソナ編集",
+    "name": "ペルソナ名",
+    "avatar": "アバター",
+    "gender": "性別",
+    "personality": "性格特性",
+    "custom_prompt": "カスタムプロンプト",
+    "no_personas": "ペルソナがありません",
+    "create_first": "最初のペルソナを作成しましょう",
+    "personality_traits": {
+      "extraversion": "外向性",
+      "agreeableness": "協調性",
+      "conscientiousness": "勤勉性",
+      "neuroticism": "神経質性",
+      "openness": "開放性"
+    },
+    "trait_descriptions": {
+      "extraversion": "社交的で活発な性格",
+      "agreeableness": "協力的で思いやりのある性格",
+      "conscientiousness": "責任感が強く組織的な性格",
+      "neuroticism": "感情的で敏感な性格",
+      "openness": "創造的で新しいことに開放的な性格"
+    },
+    "avatar_options": {
+      "emoji": "絵文字",
+      "image": "画像",
+      "generated": "自動生成"
+    },
+    "gender_options": {
+      "male": "男性",
+      "female": "女性",
+      "neutral": "中性"
+    }
+  },
+  "conversation": {
+    "typing": "入力中...",
+    "thinking": "考え中...",
+    "generating": "返答を生成中...",
+    "online": "オンライン",
+    "offline": "オフライン",
+    "last_seen": "最終アクセス",
+    "conversation_starter": "話を始めてみませんか？",
+    "no_messages": "まだメッセージがありません",
+    "send_message": "メッセージを送信",
+    "mention_someone": "@名前でメンション",
+    "attach_file": "ファイル添付",
+    "emoji_picker": "絵文字選択",
+    "conversation_flow": {
+      "active": "活発",
+      "flowing": "スムーズ",
+      "cooling": "クールダウン中",
+      "dormant": "休眠中"
+    },
+    "engagement_level": {
+      "high": "高い",
+      "medium": "普通",
+      "low": "低い"
+    }
+  },
+  "action": {
+    "create": "作成",
+    "edit": "編集",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "done": "完了",
+    "close": "閉じる",
+    "confirm": "確認",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "前へ",
+    "refresh": "更新",
+    "retry": "再試行",
+    "export": "エクスポート",
+    "import": "インポート",
+    "download": "ダウンロード",
+    "upload": "アップロード"
+  },
+  "status": {
+    "online": "オンライン",
+    "offline": "オフライン",
+    "connecting": "接続中...",
+    "reconnecting": "再接続中...",
+    "connected": "接続済み",
+    "disconnected": "切断されました",
+    "loading": "読み込み中...",
+    "saving": "保存中...",
+    "saved": "保存されました",
+    "error": "エラー",
+    "success": "成功",
+    "warning": "警告",
+    "info": "情報"
+  },
+  "notification": {
+    "room_created": "ルームが作成されました",
+    "persona_created": "ペルソナが作成されました",
+    "user_joined": "{user}がルームに参加しました",
+    "user_left": "{user}がルームを退出しました",
+    "message_sent": "メッセージが送信されました",
+    "connection_lost": "接続が失われました",
+    "connection_restored": "接続が回復しました",
+    "auto_save_enabled": "自動保存が有効になりました",
+    "conversation_exported": "会話がエクスポートされました",
+    "settings_updated": "設定が更新されました"
+  },
+  "error": {
+    "server_error": "サーバーエラーが発生しました",
+    "network": "ネットワークエラーが発生しました",
+    "validation": "入力内容をご確認ください",
+    "file_upload": "ファイルのアップロードに失敗しました",
+    "connection_failed": "接続に失敗しました",
+    "timeout": "タイムアウトが発生しました",
+    "not_found": "見つかりません",
+    "unauthorized": "認証が必要です",
+    "forbidden": "アクセスが拒否されました",
+    "rate_limit": "リクエストが多すぎます。しばらくお待ちください",
+    "claude_unavailable": "Claude AIが利用できません",
+    "database_error": "データベースエラーが発生しました",
+    "invalid_input": "無効な入力です",
+    "duplicate_name": "この名前は既に使用されています"
+  },
+  "placeholder": {
+    "message": "メッセージを入力... @名前 でメンションできます",
+    "room_name": "ルーム名を入力",
+    "room_topic": "何について話しますか？",
+    "persona_name": "ペルソナ名を入力",
+    "custom_prompt": "このペルソナの行動に関する追加の指示...",
+    "search": "検索...",
+    "search_rooms": "ルームを検索",
+    "search_personas": "ペルソナを検索",
+    "search_messages": "メッセージを検索"
+  },
+  "time": {
+    "just_now": "たった今",
+    "minutes_ago": "{count}分前",
+    "hours_ago": "{count}時間前",
+    "days_ago": "{count}日前",
+    "weeks_ago": "{count}週間前",
+    "months_ago": "{count}ヶ月前",
+    "years_ago": "{count}年前",
+    "yesterday": "昨日",
+    "today": "今日",
+    "tomorrow": "明日"
+  },
+  "cultural": {
+    "greetings": {
+      "morning": "おはようございます",
+      "afternoon": "こんにちは", 
+      "evening": "こんばんは",
+      "casual_morning": "おはよう",
+      "casual_general": "やあ",
+      "first_meeting": "初めまして、よろしくお願いします"
+    },
+    "conversation_starters": [
+      "最近いかがですか？",
+      "何か面白いことはありましたか？",
+      "お元気でしたか？",
+      "今日はいい天気ですね",
+      "ところで、",
+      "そういえば、"
+    ],
+    "agreement_expressions": [
+      "そうですね",
+      "確かに",
+      "おっしゃる通りです",
+      "なるほど",
+      "その通りです",
+      "同感です"
+    ],
+    "transition_phrases": [
+      "ところで",
+      "そういえば",
+      "それはそうと",
+      "話は変わりますが",
+      "ちなみに",
+      "そうそう"
+    ],
+    "question_patterns": [
+      "どう思いますか？",
+      "いかがでしょうか？",
+      "ご意見をお聞かせください",
+      "どのようにお考えですか？"
+    ],
+    "politeness_markers": {
+      "casual": ["だよ", "だね", "じゃん", "よね"],
+      "polite": ["です", "ます", "ですね", "ました"],
+      "formal": ["であります", "いたします", "させていただきます"],
+      "humble": ["恐れ入ります", "申し上げます", "いたします"]
+    },
+    "emotional_expressions": {
+      "joy": ["嬉しいです", "楽しいですね", "素晴らしい", "良かった"],
+      "surprise": ["びっくり", "驚きました", "意外ですね", "へー"],
+      "concern": ["心配ですね", "大丈夫でしょうか", "気になります"],
+      "understanding": ["わかります", "理解できます", "そうですね"],
+      "appreciation": ["ありがとうございます", "感謝します", "助かります"]
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "general": "一般",
+    "appearance": "表示",
+    "notifications": "通知",
+    "privacy": "プライバシー",
+    "advanced": "詳細設定",
+    "language": "言語設定",
+    "theme": "テーマ",
+    "light": "ライト",
+    "dark": "ダーク",
+    "auto": "自動",
+    "font_size": "フォントサイズ",
+    "animation": "アニメーション",
+    "sound": "サウンド",
+    "auto_save": "自動保存",
+    "export_data": "データエクスポート",
+    "import_data": "データインポート",
+    "reset_settings": "設定をリセット"
+  },
+  "help": {
+    "title": "ヘルプ",
+    "getting_started": "はじめに",
+    "creating_personas": "ペルソナの作成",
+    "managing_rooms": "ルーム管理",
+    "conversation_tips": "会話のコツ",
+    "troubleshooting": "トラブルシューティング",
+    "keyboard_shortcuts": "キーボードショートカット",
+    "faq": "よくある質問",
+    "contact_support": "サポートに連絡"
+  }
+}

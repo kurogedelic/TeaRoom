@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="auto">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeaRoom - AI Chat Platform</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍵</text></svg>">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                <div class="app-title">🍵</div>
+                <button class="btn btn-ghost btn-sm" id="theme-toggle" title="Toggle theme">
+                    <span id="theme-icon">🌙</span>
+                </button>
+            </div>
+
+            <!-- Sidebar Actions -->
+            <div class="sidebar-actions">
+                <button class="btn btn-primary btn-block" id="create-room-btn">
+                    <span>➕</span> <span data-i18n="nav.create_room">Create Room</span>
+                </button>
+                <button class="btn btn-secondary btn-block" id="create-persona-btn">
+                    <span>🎭</span> <span data-i18n="nav.create_persona">Create Persona</span>
+                </button>
+            </div>
+
+            <!-- Room List -->
+            <div class="sidebar-content">
+                <div class="room-list">
+                    <div class="room-list-header">
+                        <span class="room-list-title" data-i18n="nav.rooms">Rooms</span>
+                        <span class="room-count" id="room-count">0</span>
+                    </div>
+                    <div id="room-list-container">
+                        <!-- Room items will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <button class="btn btn-ghost btn-block" id="manage-personas-btn">
+                    <span>👥</span> <span data-i18n="nav.manage_personas">Manage Personas</span>
+                </button>
+                <button class="btn btn-ghost btn-block" id="settings-btn">
+                    <span>⚙️</span> <span data-i18n="nav.settings">Settings</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Chat Header -->
+            <div class="chat-header" id="chat-header">
+                <div class="chat-info">
+                    <div>
+                        <div class="chat-title" id="chat-title" data-i18n="app.title">Welcome to TeaRoom</div>
+                        <div class="chat-subtitle" id="chat-subtitle" data-i18n="room.empty_state.description">Select a room to start chatting</div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="btn btn-ghost btn-sm" id="auto-chat-toggle" title="Toggle auto chat" style="display: none;">
+                        <span id="auto-chat-icon">▶️</span>
+                    </button>
+                    <button class="btn btn-ghost btn-sm" id="search-button" title="Search messages" style="display: none;">
+                        <span>🔍</span>
+                    </button>
+                    <div class="status-bar">
+                        <span id="connection-status" class="connection-status unknown" title="Connection Status">⚪</span>
+                        <span id="system-status" class="system-status unknown" title="System Health">⚪</span>
+                    </div>
+                    <div class="chat-personas" id="chat-personas">
+                        <!-- Persona avatars will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div class="messages-container" id="messages-container">
+                <!-- Empty State -->
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-state-icon">💬</div>
+                    <div class="empty-state-title" data-i18n="room.empty_state.title">No room selected</div>
+                    <div class="empty-state-description" data-i18n="room.empty_state.description">
+                        Create a new room or select an existing one to start a conversation with AI personas.
+                    </div>
+                    <button class="btn btn-primary" id="empty-create-room-btn">
+                        <span>➕</span> <span data-i18n="room.empty_state.action">Create Your First Room</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Input Container -->
+            <div class="input-container" id="input-container" style="display: none;">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="message-input" 
+                        class="input-field" 
+                        data-i18n-placeholder="message.input_placeholder"
+                        placeholder="Type your message... Use @name to mention someone"
+                        rows="1"
+                    ></textarea>
+                    <button class="btn btn-primary send-button" id="send-button" disabled>
+                        <span>📤</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Room Modal -->
+    <div class="modal-overlay" id="room-modal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" data-i18n="room.create">Create New Room</h3>
+                <button class="modal-close" id="room-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="room-form">
+                    <div class="form-group">
+                        <label class="form-label" for="room-name" data-i18n="room.name">Room Name</label>
+                        <input type="text" id="room-name" class="form-input" data-i18n-placeholder="placeholder.room_name" placeholder="Enter room name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="room-topic" data-i18n="room.topic">Discussion Topic (Optional)</label>
+                        <textarea id="room-topic" class="form-textarea" data-i18n-placeholder="placeholder.room_topic" placeholder="What would you like to discuss?"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="room-language" data-i18n="room.language">Language</label>
+                        <select id="room-language" class="form-select">
+                            <option value="ja">Japanese (日本語)</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Select Personas (Choose 2)</label>
+                        <div id="persona-selection" class="persona-grid">
+                            <!-- Persona checkboxes will be populated here -->
+                        </div>
+                        <div class="form-help">Select exactly 2 personas to participate in this conversation.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="room-cancel-btn">Cancel</button>
+                <button class="btn btn-primary" id="room-create-btn" disabled>Create Room</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Persona Modal -->
+    <div class="modal-overlay" id="persona-modal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Persona</h3>
+                <button class="modal-close" id="persona-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="persona-form">
+                    <div class="form-group">
+                        <label class="form-label" for="persona-name">Persona Name</label>
+                        <input type="text" id="persona-name" class="form-input" placeholder="Enter persona name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Avatar</label>
+                        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                            <label style="display: flex; align-items: center; gap: 6px;">
+                                <input type="radio" name="avatar-type" value="emoji" checked>
+                                <span>Emoji</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px;">
+                                <input type="radio" name="avatar-type" value="upload">
+                                <span>Upload Image</span>
+                            </label>
+                        </div>
+                        <div id="emoji-selector">
+                            <select id="persona-emoji" class="form-select">
+                                <option value="🤖">🤖 Robot</option>
+                                <option value="👤">👤 Person</option>
+                                <option value="🌟">🌟 Star</option>
+                                <option value="🎭">🎭 Theater</option>
+                                <option value="💫">💫 Sparkle</option>
+                                <option value="🌙">🌙 Moon</option>
+                                <option value="☀️">☀️ Sun</option>
+                                <option value="⚡">⚡ Lightning</option>
+                                <option value="🔥">🔥 Fire</option>
+                                <option value="💎">💎 Diamond</option>
+                            </select>
+                        </div>
+                        <div id="image-upload" style="display: none;">
+                            <input type="file" id="persona-image" class="form-input" accept="image/*">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="persona-gender">Gender (Optional)</label>
+                        <select id="persona-gender" class="form-select">
+                            <option value="">Not specified</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="neutral">Neutral</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">API Provider</label>
+                        <div style="display: flex; gap: 12px;">
+                            <label style="display: flex; align-items: center; gap: 6px;">
+                                <input type="radio" name="api-provider" value="claude-code" checked>
+                                <span>Claude Code</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px;">
+                                <input type="radio" name="api-provider" value="openai" disabled>
+                                <span>OpenAI API (Coming Soon)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Big Five Personality Traits -->
+                    <div class="form-group">
+                        <label class="form-label">Personality Traits (Big Five Model)</label>
+                        
+                        <div class="range-group">
+                            <div class="range-label">
+                                <span>Extraversion</span>
+                                <span id="extraversion-value">3</span>
+                            </div>
+                            <input type="range" id="extraversion" class="range-input" min="1" max="5" value="3">
+                            <div class="range-labels">
+                                <span>Introverted</span>
+                                <span>Extroverted</span>
+                            </div>
+                        </div>
+
+                        <div class="range-group">
+                            <div class="range-label">
+                                <span>Agreeableness</span>
+                                <span id="agreeableness-value">3</span>
+                            </div>
+                            <input type="range" id="agreeableness" class="range-input" min="1" max="5" value="3">
+                            <div class="range-labels">
+                                <span>Analytical</span>
+                                <span>Cooperative</span>
+                            </div>
+                        </div>
+
+                        <div class="range-group">
+                            <div class="range-label">
+                                <span>Conscientiousness</span>
+                                <span id="conscientiousness-value">3</span>
+                            </div>
+                            <input type="range" id="conscientiousness" class="range-input" min="1" max="5" value="3">
+                            <div class="range-labels">
+                                <span>Spontaneous</span>
+                                <span>Organized</span>
+                            </div>
+                        </div>
+
+                        <div class="range-group">
+                            <div class="range-label">
+                                <span>Neuroticism</span>
+                                <span id="neuroticism-value">3</span>
+                            </div>
+                            <input type="range" id="neuroticism" class="range-input" min="1" max="5" value="3">
+                            <div class="range-labels">
+                                <span>Stable</span>
+                                <span>Sensitive</span>
+                            </div>
+                        </div>
+
+                        <div class="range-group">
+                            <div class="range-label">
+                                <span>Openness</span>
+                                <span id="openness-value">3</span>
+                            </div>
+                            <input type="range" id="openness" class="range-input" min="1" max="5" value="3">
+                            <div class="range-labels">
+                                <span>Traditional</span>
+                                <span>Creative</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="persona-prompt">Custom Prompt (Optional)</label>
+                        <textarea id="persona-prompt" class="form-textarea" placeholder="Additional instructions for this persona's behavior and personality..."></textarea>
+                        <div class="form-help">This will be added to the system prompt to customize the persona's behavior.</div>
+                    </div>
+                    
+                    <!-- JSON Import/Export Section -->
+                    <div class="form-group" id="json-section">
+                        <label class="form-label">JSON Import/Export</label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <button type="button" class="btn btn-secondary btn-sm" id="import-json-btn">📁 Import JSON</button>
+                            <button type="button" class="btn btn-secondary btn-sm" id="export-json-btn">💾 Export JSON</button>
+                        </div>
+                        <input type="file" id="json-file-input" accept=".json" style="display: none;">
+                        <textarea id="json-preview" class="form-textarea" placeholder="JSON will appear here..." readonly style="font-family: monospace; font-size: 12px; background: var(--bg-tertiary); display: none;"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="persona-cancel-btn">Cancel</button>
+                <button class="btn btn-primary" id="persona-create-btn">Create Persona</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Personas Modal -->
+    <div class="modal-overlay" id="manage-personas-modal" style="display: none;">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Manage Personas</h3>
+                <button class="modal-close" id="manage-personas-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h4 style="margin: 0; color: var(--text-primary);">Your Personas</h4>
+                    <button class="btn btn-primary btn-sm" id="add-new-persona-btn">
+                        <span>➕</span> Add New
+                    </button>
+                </div>
+                
+                <div id="personas-list-container">
+                    <!-- Personas will be loaded here -->
+                </div>
+                
+                <!-- Empty state -->
+                <div id="personas-empty-state" style="text-align: center; padding: 40px; display: none;">
+                    <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">🎭</div>
+                    <h4 style="margin-bottom: 8px;">No personas yet</h4>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">Create your first persona to get started.</p>
+                    <button class="btn btn-primary" id="empty-add-persona-btn">
+                        <span>➕</span> Create First Persona
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="manage-personas-done-btn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Settings</h3>
+                <button class="modal-close" id="settings-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="settings-language">Interface Language</label>
+                    <select id="settings-language" class="form-select">
+                        <option value="ja">Japanese (日本語)</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="settings-theme">Theme</label>
+                    <select id="settings-theme" class="form-select">
+                        <option value="auto">Auto (System Preference)</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="settings-notifications">
+                        <span>Enable Notifications</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="settings-cancel-btn">Cancel</button>
+                <button class="btn btn-primary" id="settings-save-btn">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div class="modal-overlay" id="search-modal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" data-i18n="search.title">Search Messages</h3>
+                <button class="modal-close" id="search-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="text" id="search-input" class="form-input" data-i18n-placeholder="search.placeholder" placeholder="Search for messages..." autofocus>
+                </div>
+                <div id="search-results" style="max-height: 400px; overflow-y: auto;">
+                    <!-- Search results will be displayed here -->
+                </div>
+                <div id="search-loading" style="display: none; text-align: center; padding: 20px;">
+                    <span>🔍 Searching...</span>
+                </div>
+                <div id="search-empty" style="display: none; text-align: center; padding: 20px; color: var(--text-secondary);">
+                    <span data-i18n="search.no_results">No messages found</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 2000;"></div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/i18n.js"></script>
+    <script src="/js/components/theme.js"></script>
+    <script src="/js/components/modal.js"></script>
+    <script src="/js/components/toast.js"></script>
+    <script src="/js/components/error-handler.js"></script>
+    <script src="/js/components/voice-control.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
