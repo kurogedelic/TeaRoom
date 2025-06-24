@@ -11,6 +11,7 @@ yarn-error.log*
 # Claude instance files (user-specific)
 instances/*/
 !instances/.gitkeep
+CLAUDE.MD
 
 # User uploads
 public/uploads/
@@ -55,6 +56,22 @@ temp/
 # Archive and old files
 archive/
 *.old
+
+# Database files (auto-generated)
+tearoom.db
+tearoom.db-*
+*.sqlite
+*.sqlite3
+
+# Runtime data
+data/
+.data/
+
+# Development files
+PROJECT_STATUS.md
+QUICKSTART.md
+quick-deploy.sh
+validate-deployment.sh
 
 # Claude Code specific - exclude user instances but keep example structure
 !instances/README.md
