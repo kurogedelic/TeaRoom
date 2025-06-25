@@ -34,4 +34,514 @@ class VoiceControl {
   
   setupSpeechRecognition() {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;\n      this.recognition = new SpeechRecognition();\n      \n      this.recognition.continuous = true;\n      this.recognition.interimResults = true;\n      this.recognition.lang = this.currentLanguage;\n      \n      this.recognition.onstart = () => {\n        console.log('🎤 Speech recognition started');\n        this.isListening = true;\n        this.updateVoiceUI();\n      };\n      \n      this.recognition.onresult = (event) => {\n        let finalTranscript = '';\n        let interimTranscript = '';\n        \n        for (let i = event.resultIndex; i < event.results.length; i++) {\n          const transcript = event.results[i][0].transcript;\n          if (event.results[i].isFinal) {\n            finalTranscript += transcript;\n          } else {\n            interimTranscript += transcript;\n          }\n        }\n        \n        if (finalTranscript) {\n          this.handleSpeechResult(finalTranscript);\n        }\n        \n        // Update UI with interim results\n        this.updateSpeechIndicator(interimTranscript || finalTranscript);\n      };\n      \n      this.recognition.onerror = (event) => {\n        console.error('❌ Speech recognition error:', event.error);\n        this.showVoiceError(`Speech recognition error: ${event.error}`);\n        this.stopListening();\n      };\n      \n      this.recognition.onend = () => {\n        console.log('🔇 Speech recognition ended');\n        this.isListening = false;\n        this.updateVoiceUI();\n        this.hideSpeechIndicator();\n      };\n      \n      console.log('✅ Speech recognition setup complete');\n    } else {\n      console.warn('⚠️ Speech recognition not supported');\n    }\n  }\n  \n  setupSpeechSynthesis() {\n    if ('speechSynthesis' in window) {\n      this.synthesis.onvoiceschanged = () => {\n        this.updateAvailableVoices();\n      };\n      \n      console.log('✅ Speech synthesis setup complete');\n    } else {\n      console.warn('⚠️ Speech synthesis not supported');\n    }\n  }\n  \n  setupVoiceUI() {\n    // Create voice control button\n    const voiceButton = document.createElement('button');\n    voiceButton.id = 'voice-control-btn';\n    voiceButton.className = 'btn btn-ghost btn-sm';\n    voiceButton.innerHTML = '<span id=\"voice-icon\">🎤</span>';\n    voiceButton.title = 'Voice Control (Click to start/stop listening)';\n    voiceButton.style.display = 'none'; // Hidden by default\n    \n    // Add to chat actions\n    const chatActions = document.querySelector('.chat-actions');\n    if (chatActions) {\n      chatActions.insertBefore(voiceButton, chatActions.firstChild);\n    }\n    \n    // Voice settings button\n    const voiceSettingsBtn = document.createElement('button');\n    voiceSettingsBtn.id = 'voice-settings-btn';\n    voiceSettingsBtn.className = 'btn btn-ghost btn-sm';\n    voiceSettingsBtn.innerHTML = '<span>🎛️</span>';\n    voiceSettingsBtn.title = 'Voice Settings';\n    voiceSettingsBtn.style.display = 'none';\n    \n    if (chatActions) {\n      chatActions.insertBefore(voiceSettingsBtn, voiceButton.nextSibling);\n    }\n    \n    // Speech indicator\n    const speechIndicator = document.createElement('div');\n    speechIndicator.id = 'speech-indicator';\n    speechIndicator.className = 'speech-indicator';\n    speechIndicator.style.display = 'none';\n    speechIndicator.innerHTML = `\n      <div class=\"speech-indicator-content\">\n        <div class=\"speech-wave\">\n          <div class=\"wave-dot\"></div>\n          <div class=\"wave-dot\"></div>\n          <div class=\"wave-dot\"></div>\n        </div>\n        <span id=\"speech-text\">Listening...</span>\n      </div>\n    `;\n    \n    // Add to messages container\n    const messagesContainer = document.getElementById('messages-container');\n    if (messagesContainer) {\n      messagesContainer.appendChild(speechIndicator);\n    }\n    \n    // Event listeners\n    voiceButton.addEventListener('click', () => {\n      this.toggleListening();\n    });\n    \n    voiceSettingsBtn.addEventListener('click', () => {\n      this.showVoiceSettings();\n    });\n    \n    // Keyboard shortcuts\n    document.addEventListener('keydown', (e) => {\n      // Ctrl/Cmd + Shift + V to toggle voice\n      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'V') {\n        e.preventDefault();\n        this.toggleListening();\n      }\n      \n      // Escape to stop listening\n      if (e.key === 'Escape' && this.isListening) {\n        this.stopListening();\n      }\n    });\n  }\n  \n  setupWebSocketEvents() {\n    if (!this.app.socket) return;\n    \n    // Voice recognition events\n    this.app.socket.on('voice:listening_started', (data) => {\n      console.log('🎤 Server confirmed listening started');\n    });\n    \n    this.app.socket.on('voice:listening_stopped', (data) => {\n      console.log('🔇 Server confirmed listening stopped');\n    });\n    \n    this.app.socket.on('voice:recognition_result', (data) => {\n      console.log('🎤 Voice recognition result:', data.text);\n      this.handleServerSpeechResult(data);\n    });\n    \n    this.app.socket.on('voice:commands_recognized', (data) => {\n      console.log('🎤 Voice commands recognized:', data.commands);\n      this.handleVoiceCommands(data);\n    });\n    \n    // Voice synthesis events\n    this.app.socket.on('voice:speaking_started', (data) => {\n      console.log('🗣️ AI started speaking');\n      this.isSpeaking = true;\n      this.updateVoiceUI();\n    });\n    \n    this.app.socket.on('voice:speaking_stopped', (data) => {\n      console.log('🔇 AI stopped speaking');\n      this.isSpeaking = false;\n      this.updateVoiceUI();\n    });\n    \n    // Voice action events\n    this.app.socket.on('voice:execute_action', (data) => {\n      this.executeVoiceAction(data);\n    });\n    \n    // Error events\n    this.app.socket.on('voice:error', (data) => {\n      console.error('❌ Voice error:', data);\n      this.showVoiceError(data.message);\n    });\n    \n    // Room voice events\n    this.app.socket.on('voice:user_listening', (data) => {\n      this.showUserListening(data.userId);\n    });\n    \n    this.app.socket.on('voice:ai_speaking', (data) => {\n      this.showAISpeaking(data);\n    });\n  }\n  \n  async requestPermissions() {\n    try {\n      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });\n      stream.getTracks().forEach(track => track.stop());\n      console.log('✅ Microphone permission granted');\n      this.showVoiceControls();\n    } catch (error) {\n      console.warn('⚠️ Microphone permission denied:', error);\n      this.showPermissionError();\n    }\n  }\n  \n  showVoiceControls() {\n    const voiceBtn = document.getElementById('voice-control-btn');\n    const settingsBtn = document.getElementById('voice-settings-btn');\n    \n    if (voiceBtn) voiceBtn.style.display = 'inline-flex';\n    if (settingsBtn) settingsBtn.style.display = 'inline-flex';\n  }\n  \n  async toggleListening() {\n    if (this.isListening) {\n      await this.stopListening();\n    } else {\n      await this.startListening();\n    }\n  }\n  \n  async startListening() {\n    if (this.isListening) return;\n    \n    try {\n      // Start local recognition\n      if (this.recognition) {\n        this.recognition.lang = this.currentLanguage;\n        this.recognition.start();\n      }\n      \n      // Notify server\n      if (this.app.socket && this.app.currentRoom) {\n        this.app.socket.emit('voice:start_listening', {\n          language: this.currentLanguage,\n          roomId: this.app.currentRoom.id\n        });\n      }\n      \n      this.showSpeechIndicator();\n      console.log('🎤 Started listening');\n    } catch (error) {\n      console.error('❌ Failed to start listening:', error);\n      this.showVoiceError('Failed to start voice recognition');\n    }\n  }\n  \n  async stopListening() {\n    if (!this.isListening) return;\n    \n    try {\n      // Stop local recognition\n      if (this.recognition) {\n        this.recognition.stop();\n      }\n      \n      // Notify server\n      if (this.app.socket) {\n        this.app.socket.emit('voice:stop_listening');\n      }\n      \n      this.hideSpeechIndicator();\n      console.log('🔇 Stopped listening');\n    } catch (error) {\n      console.error('❌ Failed to stop listening:', error);\n    }\n  }\n  \n  handleSpeechResult(transcript) {\n    console.log('🎤 Speech result:', transcript);\n    \n    // Send to server for command processing\n    if (this.app.socket) {\n      this.app.socket.emit('voice:command', {\n        text: transcript,\n        context: {\n          roomId: this.app.currentRoom?.id\n        }\n      });\n    }\n  }\n  \n  handleServerSpeechResult(data) {\n    // Update UI with recognized text\n    this.updateSpeechIndicator(data.text);\n    \n    // If confidence is high, auto-fill message input\n    if (data.confidence > 0.8) {\n      const messageInput = document.getElementById('message-input');\n      if (messageInput) {\n        messageInput.value = data.text;\n        messageInput.focus();\n      }\n    }\n  }\n  \n  handleVoiceCommands(data) {\n    for (const result of data.results) {\n      if (result.success) {\n        switch (result.type) {\n          case 'send_message':\n            this.autoSendMessage(result.message);\n            break;\n          case 'message':\n            this.fillMessageInput(result.text);\n            break;\n        }\n      }\n    }\n  }\n  \n  executeVoiceAction(data) {\n    switch (data.action) {\n      case 'send_message':\n        this.autoSendMessage(data.data.message);\n        break;\n      case 'show_modal':\n        const modal = document.getElementById(data.data.modalId);\n        if (modal) {\n          modal.style.display = 'flex';\n        }\n        break;\n    }\n  }\n  \n  autoSendMessage(message) {\n    const messageInput = document.getElementById('message-input');\n    const sendButton = document.getElementById('send-button');\n    \n    if (messageInput && sendButton) {\n      messageInput.value = message;\n      sendButton.click();\n    }\n  }\n  \n  fillMessageInput(text) {\n    const messageInput = document.getElementById('message-input');\n    if (messageInput) {\n      messageInput.value = text;\n      messageInput.focus();\n    }\n  }\n  \n  async speakMessage(text, personaConfig = {}) {\n    try {\n      // Use Web Speech API for local synthesis\n      if (this.synthesis) {\n        const utterance = new SpeechSynthesisUtterance(text);\n        utterance.lang = personaConfig.language || this.currentLanguage;\n        utterance.rate = personaConfig.speechRate || 1.0;\n        utterance.pitch = personaConfig.speechPitch || 1.0;\n        \n        // Select appropriate voice\n        const voices = this.synthesis.getVoices();\n        const voice = this.selectVoice(voices, personaConfig);\n        if (voice) {\n          utterance.voice = voice;\n        }\n        \n        this.synthesis.speak(utterance);\n      }\n      \n      // Also send to server for system-wide synthesis\n      if (this.app.socket && this.app.currentRoom) {\n        this.app.socket.emit('voice:speak', {\n          text: text,\n          personaConfig: personaConfig,\n          roomId: this.app.currentRoom.id\n        });\n      }\n    } catch (error) {\n      console.error('❌ Speech synthesis failed:', error);\n    }\n  }\n  \n  selectVoice(voices, personaConfig) {\n    const language = personaConfig.language || this.currentLanguage;\n    const gender = personaConfig.gender || 'neutral';\n    \n    // Filter voices by language\n    let filteredVoices = voices.filter(voice => \n      voice.lang.startsWith(language.split('-')[0])\n    );\n    \n    if (filteredVoices.length === 0) {\n      filteredVoices = voices;\n    }\n    \n    // Try to match gender if specified\n    if (gender !== 'neutral') {\n      const genderVoices = filteredVoices.filter(voice => \n        voice.name.toLowerCase().includes(gender === 'female' ? 'female' : 'male')\n      );\n      \n      if (genderVoices.length > 0) {\n        return genderVoices[0];\n      }\n    }\n    \n    return filteredVoices[0] || null;\n  }\n  \n  updateVoiceUI() {\n    const voiceIcon = document.getElementById('voice-icon');\n    const voiceBtn = document.getElementById('voice-control-btn');\n    \n    if (voiceIcon && voiceBtn) {\n      if (this.isListening) {\n        voiceIcon.textContent = '🔴';\n        voiceBtn.title = 'Stop listening';\n        voiceBtn.classList.add('active');\n      } else if (this.isSpeaking) {\n        voiceIcon.textContent = '🗣️';\n        voiceBtn.title = 'AI is speaking';\n        voiceBtn.classList.remove('active');\n      } else {\n        voiceIcon.textContent = '🎤';\n        voiceBtn.title = 'Start listening';\n        voiceBtn.classList.remove('active');\n      }\n    }\n  }\n  \n  showSpeechIndicator() {\n    const indicator = document.getElementById('speech-indicator');\n    if (indicator) {\n      indicator.style.display = 'block';\n    }\n  }\n  \n  hideSpeechIndicator() {\n    const indicator = document.getElementById('speech-indicator');\n    if (indicator) {\n      indicator.style.display = 'none';\n    }\n  }\n  \n  updateSpeechIndicator(text) {\n    const speechText = document.getElementById('speech-text');\n    if (speechText) {\n      speechText.textContent = text || 'Listening...';\n    }\n  }\n  \n  showVoiceError(message) {\n    if (this.app.showToast) {\n      this.app.showToast(message, 'error');\n    } else {\n      console.error('Voice Error:', message);\n    }\n  }\n  \n  showPermissionError() {\n    this.showVoiceError('Microphone permission required for voice features');\n  }\n  \n  showUserListening(userId) {\n    // Visual indication that another user is speaking\n    console.log(`👤 User ${userId} is listening`);\n  }\n  \n  showAISpeaking(data) {\n    // Visual indication that AI is speaking\n    console.log(`🤖 ${data.personaName} is speaking: ${data.text}`);\n  }\n  \n  updateAvailableVoices() {\n    const voices = this.synthesis.getVoices();\n    console.log(`🗣️ Available voices: ${voices.length}`);\n  }\n  \n  showVoiceSettings() {\n    // Create and show voice settings modal\n    this.createVoiceSettingsModal();\n  }\n  \n  createVoiceSettingsModal() {\n    // Implementation for voice settings modal\n    console.log('🎛️ Voice settings modal (to be implemented)');\n  }\n  \n  setLanguage(language) {\n    this.currentLanguage = language;\n    if (this.recognition) {\n      this.recognition.lang = language;\n    }\n    \n    // Notify server\n    if (this.app.socket) {\n      this.app.socket.emit('voice:set_language', { language });\n    }\n    \n    console.log(`🗣️ Voice language set to: ${language}`);\n  }\n  \n  cleanup() {\n    if (this.isListening) {\n      this.stopListening();\n    }\n    \n    if (this.synthesis) {\n      this.synthesis.cancel();\n    }\n    \n    console.log('🧹 Voice control cleaned up');\n  }\n}\n\n// Export for use in main app\nwindow.VoiceControl = VoiceControl;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      this.recognition = new SpeechRecognition();
+      
+      this.recognition.continuous = true;
+      this.recognition.interimResults = true;
+      this.recognition.lang = this.currentLanguage;
+      
+      this.recognition.onstart = () => {
+        console.log('🎤 Speech recognition started');
+        this.isListening = true;
+        this.updateVoiceUI();
+      };
+      
+      this.recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        if (finalTranscript) {
+          this.handleSpeechResult(finalTranscript);
+        }
+        
+        // Update UI with interim results
+        this.updateSpeechIndicator(interimTranscript || finalTranscript);
+      };
+      
+      this.recognition.onerror = (event) => {
+        console.error('❌ Speech recognition error:', event.error);
+        this.showVoiceError(`Speech recognition error: ${event.error}`);
+        this.stopListening();
+      };
+      
+      this.recognition.onend = () => {
+        console.log('🔇 Speech recognition ended');
+        this.isListening = false;
+        this.updateVoiceUI();
+        this.hideSpeechIndicator();
+      };
+      
+      console.log('✅ Speech recognition setup complete');
+    } else {
+      console.warn('⚠️ Speech recognition not supported');
+    }
+  }
+  
+  setupSpeechSynthesis() {
+    if ('speechSynthesis' in window) {
+      this.synthesis.onvoiceschanged = () => {
+        this.updateAvailableVoices();
+      };
+      
+      console.log('✅ Speech synthesis setup complete');
+    } else {
+      console.warn('⚠️ Speech synthesis not supported');
+    }
+  }
+  
+  setupVoiceUI() {
+    // Create voice control button
+    const voiceButton = document.createElement('button');
+    voiceButton.id = 'voice-control-btn';
+    voiceButton.className = 'btn btn-ghost btn-sm';
+    voiceButton.innerHTML = '<span id="voice-icon">🎤</span>';
+    voiceButton.title = 'Voice Control (Click to start/stop listening)';
+    voiceButton.style.display = 'none'; // Hidden by default
+    
+    // Add to chat actions
+    const chatActions = document.querySelector('.chat-actions');
+    if (chatActions) {
+      chatActions.insertBefore(voiceButton, chatActions.firstChild);
+    }
+    
+    // Voice settings button
+    const voiceSettingsBtn = document.createElement('button');
+    voiceSettingsBtn.id = 'voice-settings-btn';
+    voiceSettingsBtn.className = 'btn btn-ghost btn-sm';
+    voiceSettingsBtn.innerHTML = '<span>🎛️</span>';
+    voiceSettingsBtn.title = 'Voice Settings';
+    voiceSettingsBtn.style.display = 'none';
+    
+    if (chatActions) {
+      chatActions.insertBefore(voiceSettingsBtn, voiceButton.nextSibling);
+    }
+    
+    // Speech indicator
+    const speechIndicator = document.createElement('div');
+    speechIndicator.id = 'speech-indicator';
+    speechIndicator.className = 'speech-indicator';
+    speechIndicator.style.display = 'none';
+    speechIndicator.innerHTML = `
+      <div class="speech-indicator-content">
+        <div class="speech-wave">
+          <div class="wave-dot"></div>
+          <div class="wave-dot"></div>
+          <div class="wave-dot"></div>
+        </div>
+        <span id="speech-text">Listening...</span>
+      </div>
+    `;
+    
+    // Add to messages container
+    const messagesContainer = document.getElementById('messages-container');
+    if (messagesContainer) {
+      messagesContainer.appendChild(speechIndicator);
+    }
+    
+    // Event listeners
+    voiceButton.addEventListener('click', () => {
+      this.toggleListening();
+    });
+    
+    voiceSettingsBtn.addEventListener('click', () => {
+      this.showVoiceSettings();
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Ctrl/Cmd + Shift + V to toggle voice
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'V') {
+        e.preventDefault();
+        this.toggleListening();
+      }
+      
+      // Escape to stop listening
+      if (e.key === 'Escape' && this.isListening) {
+        this.stopListening();
+      }
+    });
+  }
+  
+  setupWebSocketEvents() {
+    if (!this.app.socket) return;
+    
+    // Voice recognition events
+    this.app.socket.on('voice:listening_started', (data) => {
+      console.log('🎤 Server confirmed listening started');
+    });
+    
+    this.app.socket.on('voice:listening_stopped', (data) => {
+      console.log('🔇 Server confirmed listening stopped');
+    });
+    
+    this.app.socket.on('voice:recognition_result', (data) => {
+      console.log('🎤 Voice recognition result:', data.text);
+      this.handleServerSpeechResult(data);
+    });
+    
+    this.app.socket.on('voice:commands_recognized', (data) => {
+      console.log('🎤 Voice commands recognized:', data.commands);
+      this.handleVoiceCommands(data);
+    });
+    
+    // Voice synthesis events
+    this.app.socket.on('voice:speaking_started', (data) => {
+      console.log('🗣️ AI started speaking');
+      this.isSpeaking = true;
+      this.updateVoiceUI();
+    });
+    
+    this.app.socket.on('voice:speaking_stopped', (data) => {
+      console.log('🔇 AI stopped speaking');
+      this.isSpeaking = false;
+      this.updateVoiceUI();
+    });
+    
+    // Voice action events
+    this.app.socket.on('voice:execute_action', (data) => {
+      this.executeVoiceAction(data);
+    });
+    
+    // Error events
+    this.app.socket.on('voice:error', (data) => {
+      console.error('❌ Voice error:', data);
+      this.showVoiceError(data.message);
+    });
+    
+    // Room voice events
+    this.app.socket.on('voice:user_listening', (data) => {
+      this.showUserListening(data.userId);
+    });
+    
+    this.app.socket.on('voice:ai_speaking', (data) => {
+      this.showAISpeaking(data);
+    });
+  }
+  
+  async requestPermissions() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      console.log('✅ Microphone permission granted');
+      this.showVoiceControls();
+    } catch (error) {
+      console.warn('⚠️ Microphone permission denied:', error);
+      this.showPermissionError();
+    }
+  }
+  
+  showVoiceControls() {
+    const voiceBtn = document.getElementById('voice-control-btn');
+    const settingsBtn = document.getElementById('voice-settings-btn');
+    
+    if (voiceBtn) voiceBtn.style.display = 'inline-flex';
+    if (settingsBtn) settingsBtn.style.display = 'inline-flex';
+  }
+  
+  async toggleListening() {
+    if (this.isListening) {
+      await this.stopListening();
+    } else {
+      await this.startListening();
+    }
+  }
+  
+  async startListening() {
+    if (this.isListening) return;
+    
+    try {
+      // Start local recognition
+      if (this.recognition) {
+        this.recognition.lang = this.currentLanguage;
+        this.recognition.start();
+      }
+      
+      // Notify server
+      if (this.app.socket && this.app.currentRoom) {
+        this.app.socket.emit('voice:start_listening', {
+          language: this.currentLanguage,
+          roomId: this.app.currentRoom.id
+        });
+      }
+      
+      this.showSpeechIndicator();
+      console.log('🎤 Started listening');
+    } catch (error) {
+      console.error('❌ Failed to start listening:', error);
+      this.showVoiceError('Failed to start voice recognition');
+    }
+  }
+  
+  async stopListening() {
+    if (!this.isListening) return;
+    
+    try {
+      // Stop local recognition
+      if (this.recognition) {
+        this.recognition.stop();
+      }
+      
+      // Notify server
+      if (this.app.socket) {
+        this.app.socket.emit('voice:stop_listening');
+      }
+      
+      this.hideSpeechIndicator();
+      console.log('🔇 Stopped listening');
+    } catch (error) {
+      console.error('❌ Failed to stop listening:', error);
+    }
+  }
+  
+  handleSpeechResult(transcript) {
+    console.log('🎤 Speech result:', transcript);
+    
+    // Send to server for command processing
+    if (this.app.socket) {
+      this.app.socket.emit('voice:command', {
+        text: transcript,
+        context: {
+          roomId: this.app.currentRoom?.id
+        }
+      });
+    }
+  }
+  
+  handleServerSpeechResult(data) {
+    // Update UI with recognized text
+    this.updateSpeechIndicator(data.text);
+    
+    // If confidence is high, auto-fill message input
+    if (data.confidence > 0.8) {
+      const messageInput = document.getElementById('message-input');
+      if (messageInput) {
+        messageInput.value = data.text;
+        messageInput.focus();
+      }
+    }
+  }
+  
+  handleVoiceCommands(data) {
+    for (const result of data.results) {
+      if (result.success) {
+        switch (result.type) {
+          case 'send_message':
+            this.autoSendMessage(result.message);
+            break;
+          case 'message':
+            this.fillMessageInput(result.text);
+            break;
+        }
+      }
+    }
+  }
+  
+  executeVoiceAction(data) {
+    switch (data.action) {
+      case 'send_message':
+        this.autoSendMessage(data.data.message);
+        break;
+      case 'show_modal':
+        const modal = document.getElementById(data.data.modalId);
+        if (modal) {
+          modal.style.display = 'flex';
+        }
+        break;
+    }
+  }
+  
+  autoSendMessage(message) {
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    
+    if (messageInput && sendButton) {
+      messageInput.value = message;
+      sendButton.click();
+    }
+  }
+  
+  fillMessageInput(text) {
+    const messageInput = document.getElementById('message-input');
+    if (messageInput) {
+      messageInput.value = text;
+      messageInput.focus();
+    }
+  }
+  
+  async speakMessage(text, personaConfig = {}) {
+    try {
+      // Use Web Speech API for local synthesis
+      if (this.synthesis) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = personaConfig.language || this.currentLanguage;
+        utterance.rate = personaConfig.speechRate || 1.0;
+        utterance.pitch = personaConfig.speechPitch || 1.0;
+        
+        // Select appropriate voice
+        const voices = this.synthesis.getVoices();
+        const voice = this.selectVoice(voices, personaConfig);
+        if (voice) {
+          utterance.voice = voice;
+        }
+        
+        this.synthesis.speak(utterance);
+      }
+      
+      // Also send to server for system-wide synthesis
+      if (this.app.socket && this.app.currentRoom) {
+        this.app.socket.emit('voice:speak', {
+          text: text,
+          personaConfig: personaConfig,
+          roomId: this.app.currentRoom.id
+        });
+      }
+    } catch (error) {
+      console.error('❌ Speech synthesis failed:', error);
+    }
+  }
+  
+  selectVoice(voices, personaConfig) {
+    const language = personaConfig.language || this.currentLanguage;
+    const gender = personaConfig.gender || 'neutral';
+    
+    // Filter voices by language
+    let filteredVoices = voices.filter(voice => 
+      voice.lang.startsWith(language.split('-')[0])
+    );
+    
+    if (filteredVoices.length === 0) {
+      filteredVoices = voices;
+    }
+    
+    // Try to match gender if specified
+    if (gender !== 'neutral') {
+      const genderVoices = filteredVoices.filter(voice => 
+        voice.name.toLowerCase().includes(gender === 'female' ? 'female' : 'male')
+      );
+      
+      if (genderVoices.length > 0) {
+        return genderVoices[0];
+      }
+    }
+    
+    return filteredVoices[0] || null;
+  }
+  
+  updateVoiceUI() {
+    const voiceIcon = document.getElementById('voice-icon');
+    const voiceBtn = document.getElementById('voice-control-btn');
+    
+    if (voiceIcon && voiceBtn) {
+      if (this.isListening) {
+        voiceIcon.textContent = '🔴';
+        voiceBtn.title = 'Stop listening';
+        voiceBtn.classList.add('active');
+      } else if (this.isSpeaking) {
+        voiceIcon.textContent = '🗣️';
+        voiceBtn.title = 'AI is speaking';
+        voiceBtn.classList.remove('active');
+      } else {
+        voiceIcon.textContent = '🎤';
+        voiceBtn.title = 'Start listening';
+        voiceBtn.classList.remove('active');
+      }
+    }
+  }
+  
+  showSpeechIndicator() {
+    const indicator = document.getElementById('speech-indicator');
+    if (indicator) {
+      indicator.style.display = 'block';
+    }
+  }
+  
+  hideSpeechIndicator() {
+    const indicator = document.getElementById('speech-indicator');
+    if (indicator) {
+      indicator.style.display = 'none';
+    }
+  }
+  
+  updateSpeechIndicator(text) {
+    const speechText = document.getElementById('speech-text');
+    if (speechText) {
+      speechText.textContent = text || 'Listening...';
+    }
+  }
+  
+  showVoiceError(message) {
+    if (this.app.showToast) {
+      this.app.showToast(message, 'error');
+    } else {
+      console.error('Voice Error:', message);
+    }
+  }
+  
+  showPermissionError() {
+    this.showVoiceError('Microphone permission required for voice features');
+  }
+  
+  showUserListening(userId) {
+    // Visual indication that another user is speaking
+    console.log(`👤 User ${userId} is listening`);
+  }
+  
+  showAISpeaking(data) {
+    // Visual indication that AI is speaking
+    console.log(`🤖 ${data.personaName} is speaking: ${data.text}`);
+  }
+  
+  updateAvailableVoices() {
+    const voices = this.synthesis.getVoices();
+    console.log(`🗣️ Available voices: ${voices.length}`);
+  }
+  
+  showVoiceSettings() {
+    // Create and show voice settings modal
+    this.createVoiceSettingsModal();
+  }
+  
+  createVoiceSettingsModal() {
+    // Implementation for voice settings modal
+    console.log('🎛️ Voice settings modal (to be implemented)');
+  }
+  
+  setLanguage(language) {
+    this.currentLanguage = language;
+    if (this.recognition) {
+      this.recognition.lang = language;
+    }
+    
+    // Notify server
+    if (this.app.socket) {
+      this.app.socket.emit('voice:set_language', { language });
+    }
+    
+    console.log(`🗣️ Voice language set to: ${language}`);
+  }
+  
+  cleanup() {
+    if (this.isListening) {
+      this.stopListening();
+    }
+    
+    if (this.synthesis) {
+      this.synthesis.cancel();
+    }
+    
+    console.log('🧹 Voice control cleaned up');
+  }
+}
+
+// Export for use in main app
+window.VoiceControl = VoiceControl;
